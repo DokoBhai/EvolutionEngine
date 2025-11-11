@@ -18,6 +18,12 @@ import funkin.backend.system.Mods;
     inline static function sparrowExists(key:String):Bool
         return sparrow(key) != '';
 
+    inline static function sound(key:String):String
+        return getPath('sounds/$key.${Flags.SOUND_EXT}');
+
+	inline static function music(key:String):String
+		return getPath('music/$key.${Flags.MUSIC_EXT}');
+
     static function getPath(path:String, ?includeDir:Array<String>):String {
         includeDir ??= [ // sort in order of hierarchy
             #if MODS_ALLOWED Mods.currentModDirectory ,#end 

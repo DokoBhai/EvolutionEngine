@@ -31,3 +31,4 @@ using flixel.util.FlxStringUtil;
 import funkin.backend.*;
 import funkin.backend.FunkinUtil.*;
 import funkin.backend.system.Paths;
+import funkin.backend.system.Conductor;

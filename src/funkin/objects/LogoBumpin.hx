@@ -7,8 +7,8 @@ class LogoBumpin extends FlxSprite {
 
     public var shouldBump:Bool = true;
 	public var initialScale:Float = 1;
-	public var bumpFactor:Float = 1.05;
-	public var lerpFactor(default, set):Float = 0.4;
+	public var bumpFactor:Float = 1.1;
+	public var lerpFactor(default, set):Float = 0.1;
 
     public var onBump:FlxTypedSignal<Void->Void>;
 

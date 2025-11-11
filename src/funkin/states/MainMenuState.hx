@@ -1,8 +1,12 @@
 package funkin.states;
 
+import flixel.util.FlxTimer;
+import funkin.objects.LogoBumpin;
+
 class MainMenuState extends SelectableState {
     var buttons:Array<String> = [];
 
+	var logoBumpin:LogoBumpin;
     public function new() {
         super(0, 4);
 
@@ -11,9 +15,23 @@ class MainMenuState extends SelectableState {
         bg.color = 0xFFF9DB69;
         add(bg);
 
-        var logoBumpin = new funkin.objects.LogoBumpin(0, 0, 'logoBumpin');
+        logoBumpin = new LogoBumpin(0, 0, 'logoBumpin');
         logoBumpin.screenCenter();
         add(logoBumpin);
+
+        FlxG.sound.playMusic(FunkinUtil.loadSound(Paths.music('freakyMenu')));
+        Conductor.trackedMusic = FlxG.sound.music;
+        Conductor.bpm = 102;
+    }
+
+    override function update(elapsed:Float)
+        super.update(elapsed);
+
+    override function beatHit(curBeat:Int) {
+        super.beatHit(curBeat);
+
+        if (curBeat % 2 == 0)
+            logoBumpin.bump();
     }
 }
 

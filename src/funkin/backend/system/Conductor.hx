@@ -1,40 +1,40 @@
 package funkin.backend.system;
 
 class Conductor {
-    public var songPosition(get, never):Float;
-    public var bpm(default, set):Int = 100;
+    public static var songPosition(get, never):Float;
+    public static var bpm(default, set):Int = 100;
 
-    public var curStep(get, never):Int;
-	public var curBeat(get, never):Int;
-    public var curMeasure(get, never):Int;
+    public static var curStep(get, never):Int;
+	public static var curBeat(get, never):Int;
+    public static var curMeasure(get, never):Int;
 
-	public var curDecStep(get, never):Float;
-	public var curDecBeat(get, never):Float;
-	public var curDecMeasure(get, never):Float;
+	public static var curDecStep(get, never):Float;
+	public static var curDecBeat(get, never):Float;
+	public static var curDecMeasure(get, never):Float;
 
-	public var crochet(get, never):Float;
-	public var stepCrochet(get, never):Float;
+	public static var crochet(get, never):Float;
+	public static var stepCrochet(get, never):Float;
 
-    public var trackedMusic:FlxSound;
-    public var offset:Float = 0;
+    public static var trackedMusic:FlxSound;
+    public static var offset:Float = 0;
 
-    function get_songPosition()
+	static function get_songPosition()
         return trackedMusic?.time + offset ?? 0;
 
-    function get_curStep() return int(curDecStep);
-    function get_curBeat() return int(curDecBeat);
-    function get_curMeasure() return int(curDecMeasure);
+    static function get_curStep() return int(curDecStep);
+    static function get_curBeat() return int(curDecBeat);
+    static function get_curMeasure() return int(curDecMeasure);
 
-    function get_curDecStep() return curDecBeat * 4;
-    function get_curDecBeat() return songPosition / crochet;
+    static function get_curDecStep() return songPosition / stepCrochet;
+    static function get_curDecBeat() return songPosition / crochet;
     
     // temporary
-	function get_curDecMeasure() return curDecBeat / 4;
+	static function get_curDecMeasure() return curDecBeat / 4;
 
-    function get_crochet() return (bpm / 60) * 1000;
-	function get_stepCrochet() return crochet / 4;
+    static function get_crochet() return 60000 / bpm;
+	static function get_stepCrochet() return crochet / 4;
 
-    function set_bpm(newBPM:Int) {
+	static function set_bpm(newBPM:Int) {
         // wip
         return bpm = newBPM; 
     }

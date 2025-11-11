@@ -4,11 +4,13 @@ import flixel.system.FlxAssets.FlxGraphicAsset;
 import flixel.graphics.FlxGraphic;
 import flixel.graphics.frames.FlxAtlasFrames;
 
+import flash.media.Sound;
+
 @:publicFields class FunkinUtil {
     static function getLerpRatio(ratio:Float, ?elapsed:Float)
 		return 1.0 - Math.pow(1.0 - ratio, (elapsed ?? FlxG.elapsed) * 60);
 
-	static function getSparrowAtlas(path:String) {
+	static function loadSparrowAtlas(path:String) {
 		var graphic = FlxGraphic.fromAssetKey(Paths.image(path));
 		return FlxAtlasFrames.fromSparrow(graphic, Paths.sparrow(path));
 	}
@@ -19,10 +21,14 @@ import flixel.graphics.frames.FlxAtlasFrames;
     */
     static function tryLoadFrames(sprite:FlxSprite, path:String) {
         if (Paths.sparrowExists(path)) 
-			sprite.frames = getSparrowAtlas(path);
+			sprite.frames = loadSparrowAtlas(path);
 		else
 			sprite.loadGraphic(Paths.image(path));
     }
+
+	static function loadSound(path:String) {
+		return Sound.fromFile(path);
+	}
 
 	static function sum(...tally:Float) {
 		var result:Float = 0;
