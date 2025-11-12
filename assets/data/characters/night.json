@@ -1,0 +1,110 @@
+{
+	"animations": [
+		{
+			"offsets": [
+				0,
+				0
+			],
+			"loop": false,
+			"fps": 24,
+			"anim": "singLEFT",
+			"indices": [],
+			"name": "left"
+		},
+		{
+			"offsets": [
+				0,
+				0
+			],
+			"loop": false,
+			"fps": 24,
+			"anim": "singDOWN",
+			"indices": [],
+			"name": "down"
+		},
+		{
+			"offsets": [
+				0,
+				0
+			],
+			"loop": false,
+			"fps": 24,
+			"anim": "singUP",
+			"indices": [],
+			"name": "up"
+		},
+		{
+			"offsets": [
+				0,
+				0
+			],
+			"loop": false,
+			"fps": 24,
+			"anim": "singRIGHT",
+			"indices": [],
+			"name": "right"
+		},
+		{
+			"loop": false,
+			"offsets": [
+				0,
+				-100
+			],
+			"anim": "idle",
+			"fps": 24,
+			"name": "idle",
+			"indices": []
+		},
+		{
+			"loop": false,
+			"offsets": [-280, -320],
+			"anim": "singLEFT-alt",
+			"fps": 32,
+			"name": "lmao",
+			"indices": [1, 3, 6, 10, 14, 18, 5, 7, 9, 11]
+		},
+		{
+			"loop": false,
+			"offsets": [-280, -320],
+			"anim": "singDOWN-alt",
+			"fps": 32,
+			"name": "lmao",
+			"indices": [16, 9, 2, 7, 0, 13, 18, 11, 5, 19]
+		},
+		{
+			"loop": false,
+			"offsets": [-280, -320],
+			"anim": "singUP-alt",
+			"fps": 32,
+			"name": "lmao",
+			"indices": [14, 4, 7, 12, 1, 16, 11, 2, 17, 19]
+		},
+		{
+			"loop": false,
+			"offsets": [-280, -320],
+			"anim": "singRIGHT-alt",
+			"fps": 32,
+			"name": "lmao",
+			"indices": [9, 5, 18, 0, 16, 8, 13, 4, 7, 10]
+		}		
+	],
+	"no_antialiasing": false,
+	"image": "characters/nightmare",
+	"position": [
+		-70,
+		0
+	],
+	"healthicon": "night",
+	"flip_x": false,
+	"healthbar_colors": [
+		2,
+		2,
+		2
+	],
+	"camera_position": [
+		-350,
+		-100
+	],
+	"sing_duration": 3.5,
+	"scale": 1.7
+}

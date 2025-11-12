@@ -26,13 +26,16 @@ import flash.media.Sound;
 			sprite.loadGraphic(Paths.image(path));
     }
 
-	static function loadSound(path:String) {
+	static function loadSound(path:String)
 		return Sound.fromFile(path);
-	}
+
+	static function fromRGBArray(rgb:Array<Int>)
+		return FlxColor.fromRGB(rgb[0], rgb[1], rgb[2]);
 
 	static function sum(...tally:Float) {
 		var result:Float = 0;
-		for (i in tally) result += i;
+		for (i in tally) 
+			result += i;
 
 		return result;
 	}
