@@ -120,7 +120,7 @@ class Character extends FlxSprite {
 
 		flipX = data.flipped;
 
-		frames = FunkinUtil.loadSparrowAtlas('characters/${data.source}');
+		frames = loadSparrowAtlas('characters/${data.source}');
 		for (i => anim in data.animations) { 
 			if (anim.indices != null && anim.indices?.length ?? 0 > 0) {
                 animation.addByIndices(anim.animName, anim.prefix, anim.indices, '.${Flags.IMAGE_EXT}', anim.frameRate, anim.looped);

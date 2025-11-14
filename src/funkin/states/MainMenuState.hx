@@ -24,7 +24,7 @@ class MainMenuState extends SelectableState {
         char = new Character(100, 100, 'bf');
         add(char);
 
-        FlxG.sound.playMusic(FunkinUtil.loadSound(Paths.music('freakyMenu')));
+        FlxG.sound.playMusic(loadSound(Paths.music('freakyMenu')));
         Conductor.trackedMusic = FlxG.sound.music;
         Conductor.bpm = 102;
     }

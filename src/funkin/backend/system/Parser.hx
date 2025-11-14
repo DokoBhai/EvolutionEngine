@@ -58,7 +58,7 @@ enum EngineType
 							icon: data.healthicon,
 							antialiasing: !data.no_antialiasing,
 							source: cast(data.image, String).replace('characters/', ''),
-							healthColors: FunkinUtil.fromRGBArray(data.healthbar_colors),
+							healthColors: fromRGBArray(data.healthbar_colors),
 							cameraOffsets: data.camera_position,
 							holdTime: data.sing_duration,
 							scale: data.scale,
