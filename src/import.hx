@@ -1,3 +1,4 @@
+#if !macro
 // for built-in states and substates
 import flixel.FlxState;
 import flixel.FlxSubState;
@@ -35,3 +36,4 @@ import funkin.backend.system.Conductor;
 // utils
 import funkin.backend.utils.FunkinUtil.*;
 import funkin.backend.utils.FileUtil;
+#end

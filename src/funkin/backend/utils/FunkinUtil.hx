@@ -1,8 +1,8 @@
 package funkin.backend.utils;
 
-import flixel.system.FlxAssets.FlxGraphicAsset;
 import flixel.graphics.FlxGraphic;
 import flixel.graphics.frames.FlxAtlasFrames;
+import flixel.system.FlxAssets.FlxGraphicAsset;
 import openfl.media.Sound;
 
 @:publicFields class FunkinUtil {
@@ -41,4 +41,15 @@ import openfl.media.Sound;
 
     static function average(...tally:Float)
 		return sum(...tally) / tally.length;
+
+	/* HScript stuff */
+
+	@:noUsing static inline function resolveAbstract(abs:String):Null<Dynamic> {
+		return Type.resolveClass('${abs}_HSC');
+	}
+
+	// Not normally used, but a fun tool to have
+	@:noUsing static inline function resolveExtendClass(ext:String):Null<Dynamic> {
+		return Type.resolveClass('${ext}_HSX');
+	}
 }
