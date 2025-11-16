@@ -74,7 +74,7 @@ class SongData {
 		final chartEngine = justifyEngine(sourceData);
 
         trace([sourceData, chartEngine]);
-		var chartData = Parser.chart(File.getContent(sourceData), chartEngine);
+		var chartData = Parser.chart(FileUtil.getContent(sourceData), chartEngine);
 
         //if (chartEngine != EVOLUTION)
 		//	Parser.saveJson('songs/$songPath/charts/$difficulty', chartData);
@@ -93,7 +93,7 @@ class SongData {
             if (path.endsWith('.fnfc'))
                 return VSLICE;
 
-			var json = TJSON.parse(File.getContent(path));
+			var json = TJSON.parse(FileUtil.getContent(path));
 			if (Reflect.hasField(json, 'songPath'))
 				return EVOLUTION;
 			else if (Reflect.hasField(json, 'validScore'))
