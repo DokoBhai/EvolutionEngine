@@ -38,6 +38,18 @@ import funkin.backend.system.Mods;
 		return absolute ? FileUtil.exists(key) : (getPath(key, ignoreMods) != null);
 	}
 
+	// For scripts
+	#if HSCRIPT_ALLOWED
+	static function getHScriptPath(key:String, ?folder:String = "scripts"):String {
+		return getPath('$folder/$key', false, Flags.HSCRIPT_EXT);
+	}
+	#end
+	#if LUA_ALLOWED
+	static function getLuaPath(key:String, ?folder:String = "scripts"):String {
+		return getPath('$folder/$key', false, Flags.LUA_EXT);
+	}
+	#end
+
 	static function getPath(path:String, ?ignoreMods:Bool = false, ?extensions:Array<String>, ?includeDir:Array<String>):Null<String> {
 		if (extensions != null)
 			for (i => ext in extensions) {
@@ -48,12 +60,13 @@ import funkin.backend.system.Mods;
 		extensions ??= [''];
 		if (includeDir == null) {
 			includeDir ??= [ // sort in order of hierarchy
-				#if MODS_ALLOWED Mods.currentModDirectory ,#end 
+				#if MODS_ALLOWED '${Flags.MODS_FOLDER}/${Mods.currentModDirectory}', #end 
 				'assets/shared', 'assets'
 			];
 			if (#if MODS_ALLOWED ignoreMods #else true #end) includeDir.shift();
 		}
 
+		// Me when haxe.io.Path.normalize -TBar
 		while (path.startsWith('../')) {
 			for (i => dir in includeDir) {
 				var ret = dir.split('/');

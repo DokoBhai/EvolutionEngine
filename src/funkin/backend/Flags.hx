@@ -9,4 +9,7 @@ package funkin.backend;
 	static var CHART_EXT:Array<String> = ['json', 'fnfc'];
 	static var LUA_EXT:Array<String> = ['lua'];
 	static var HSCRIPT_EXT:Array<String> = ['hx', 'hscript', 'hxscript', 'hxc'];
+
+	static var MODS_FOLDER:String = "mods";
+	// static var MULTIPLE_MODS_ALLOWED:Bool = true;
 }
