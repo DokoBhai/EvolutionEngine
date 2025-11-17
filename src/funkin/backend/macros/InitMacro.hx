@@ -10,6 +10,10 @@ import haxe.macro.Expr;
 class InitMacro {
     #if macro
 	@:unreflective public static function initializeMacros() {
+		#if(haxe < "4.3.0")
+		#error "This engine is built for Haxe versions 4.3.0 and higher! Recommended version is Haxe 4.3.7.";
+		#end
+
 		if (Context.defined("hscript_improved_dev"))
 			MacroCompiler.define("hscript-improved", "1");
 
