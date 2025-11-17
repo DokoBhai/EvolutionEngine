@@ -7,6 +7,7 @@ import sys.io.File;
 import sys.FileSystem;
 #else
 import openfl.utils.Assets as OpenFLAssets;
+import openfl.filesystem.File as OpenFLFile;
 #end
 
 /*
@@ -19,6 +20,16 @@ class FileUtil {
 		#else
 		return OpenFLAssets.getText(filePath);
 		#end
+	}
+
+	public static inline function saveContent(filePath:String, content:String) {
+		try {
+			#if sys
+			return File.saveContent(filePath, content);
+			#else
+			throw 'saveContent is not supported in non-sys platform!'
+			#end
+		} catch(e:Dynamic) trace('error: ${e.toString()}');
 	}
 
 	public static inline function exists(filePath:String):Bool {
@@ -43,5 +54,15 @@ class FileUtil {
 		#else
 		return OpenFLAssets.getBytes(filePath);
 		#end
+	}
+
+	public static inline function saveBytes(filePath:String, bytes:Bytes) {
+		try {
+			#if sys
+			return File.saveBytes(filePath, bytes);
+			#else
+			throw 'saveBytes is not supported in non-sys platform!'
+			#end
+		} catch(e:Dynamic) trace('error: ${e.toString()}');
 	}
 }

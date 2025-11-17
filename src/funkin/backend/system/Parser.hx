@@ -54,8 +54,9 @@ enum ChartEngineType {
 						// wip
 						return {};
 					case PSYCH:
-						var chartJson = TJSON.parse(content);
-						if (Reflect.hasField(chart, 'song')) // check for legacy
+						var unsafeJson = TJSON.parse(content); 
+						var chartJson:PsychSong = unsafeJson;
+						if (Reflect.hasField(unsafeJson, 'song')) // check for legacy
 							chartJson = chart(content, PSYCH_LEGACY);
 
 						var data:PsychSong = chartJson;
@@ -98,6 +99,7 @@ enum ChartEngineType {
 							bpm: data.bpm,
 							scrollSpeed: data.speed,
 							notes: notes,
+							keys: 4,
 							postfix: '',
 							evoChart: true
 						};
@@ -197,7 +199,7 @@ enum ChartEngineType {
 		try {
 			if (Paths.exists('$path.json', absolute)) {
 				final jsonContent = haxe.Json.stringify(content, '\t');
-				File.saveContent(Paths.getPath('$path.json'), jsonContent);
+				FileUtil.saveContent(Paths.getPath('$path.json'), jsonContent);
 				return jsonContent;
 			} else
 				throw 'saveJson: Path "$path.json" doesn\'t exist!';

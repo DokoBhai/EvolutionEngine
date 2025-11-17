@@ -4,10 +4,10 @@ package funkin.backend;
 import funkin.backend.scripting.HScript;
 #end
 
+typedef HScriptArray = Array<#if HSCRIPT_ALLOWED HScript #else Dynamic #end>;
+
 class ScriptableState extends MusicBeatState implements IScriptable {
-	#if HSCRIPT_ALLOWED
-	public var hscripts:Array<HScript> = [];
-	#end
+	public var hscripts:HScriptArray = [];
 	// public var luas:Array<> = []; // to be implemented
 
 	public function call(f:String, ?args:Array<Dynamic>) {

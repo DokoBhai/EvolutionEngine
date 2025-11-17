@@ -25,6 +25,7 @@ typedef Song = {
 	bpm:Float,
 	scrollSpeed:Float,
 	notes:Array<ChartNote>,
+    keys:Int,
     postfix:String, // for unique Inst/Voices for each difficulties
     evoChart:Bool
 }
