@@ -21,9 +21,9 @@ If there is any problems with the engine, feel free to open up a Git Issue or:
 - **lime**: 7.0.0
 - **openfl**: 9.3.2
 - **flixel**: 5.6.2
-  - **flixel-addons**:  3.2.2
-  - **flixel-ui**:      2.5.0
-  - **flxanimate**:     [git](https://github.com/Dot-Stuff/flxanimate/)
+	- **flixel-addons**:  3.2.2
+	- **flixel-ui**:      2.5.0
+	- **flxanimate**:     [git](https://github.com/Dot-Stuff/flxanimate/)
 - **hxcpp**:  [git](https://github.com/HaxeFoundation/hxcpp/)
 - **hxvlc**: 1.3.0
 - **hxlua**: N/A *(still deciding whether using hxvm-lua is better)*

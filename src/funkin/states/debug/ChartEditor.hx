@@ -1,5 +1,3 @@
 package funkin.states.debug;
 
-class ChartEditor extends DebugState {
-    
-}
+class ChartEditor extends DebugState {}

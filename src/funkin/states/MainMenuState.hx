@@ -1,40 +1,42 @@
 package funkin.states;
 
-import funkin.objects.LogoBumpin;
 import funkin.game.objects.Character;
+import funkin.objects.LogoBumpin;
 
-class MainMenuState extends SelectableState {
-    var buttons:Array<String> = [];
+class MainMenuState extends SelectableState
+{
+	var buttons:Array<String> = [];
 
 	var logoBumpin:LogoBumpin;
-    public function new() {
-        super(0, 4);
 
-        var bg = new FlxSprite();
-        bg.loadGraphic(Paths.image('menuDesat'));
-        bg.color = 0xFFF9DB69;
-        add(bg);
+	public function new()
+	{
+		super(0, 4);
 
-        logoBumpin = new LogoBumpin(0, 0, 'logoBumpin');
-        logoBumpin.screenCenter();
-        add(logoBumpin);
+		var bg = new FlxSprite();
+		bg.loadGraphic(Paths.image('menuDesat'));
+		bg.color = 0xFFF9DB69;
+		add(bg);
 
-        FlxG.sound.playMusic(loadSound(Paths.music('freakyMenu')));
-        Conductor.trackedMusic = FlxG.sound.music;
-        Conductor.bpm = 102;
-    }
+		logoBumpin = new LogoBumpin(0, 0, 'logoBumpin');
+		logoBumpin.screenCenter();
+		add(logoBumpin);
 
-    override function update(elapsed:Float)
-        super.update(elapsed);
+		FlxG.sound.playMusic(loadSound(Paths.music('freakyMenu')));
+		Conductor.trackedMusic = FlxG.sound.music;
+		Conductor.bpm = 102;
+	}
 
-    override function beatHit(curBeat:Int) {
-        super.beatHit(curBeat);
+	override function update(elapsed:Float)
+		super.update(elapsed);
 
-        if (curBeat % 2 == 0)
-            logoBumpin.bump();
-    }
+	override function beatHit(curBeat:Int)
+	{
+		super.beatHit(curBeat);
+
+		if (curBeat % 2 == 0)
+			logoBumpin.bump();
+	}
 }
 
-class MenuButton extends FlxSprite {
-    
-}
+class MenuButton extends FlxSprite {}

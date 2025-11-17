@@ -1,7 +1,8 @@
 package funkin.backend;
 
-@:publicFields class Flags {
-    static var IMAGE_EXT:String = 'png';
+@:publicFields class Flags
+{
+	static var IMAGE_EXT:String = 'png';
 	static var SOUND_EXT:String = #if web 'mp3' #else 'ogg' #end;
 	static var MUSIC_EXT:String = #if web 'mp3' #else 'ogg' #end;
 	static var VIDEO_EXT:String = 'mp4';
