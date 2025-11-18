@@ -2,6 +2,11 @@ package funkin.game.objects;
 
 class HUD extends FlxSpriteGroup implements IBeatListener
 {
+	public function new() {
+		super();
+
+	}
+
 	public function beatHit(curBeat:Int):Void {}
 
 	public function stepHit(curStep:Int):Void {}

@@ -1,7 +1,6 @@
 package funkin.backend.system;
 
-class Mods
-{
+class Mods {
 	#if MODS_ALLOWED
 	public static var currentMod:String = '';
 	public static var currentModDirectory(get, never):String;
@@ -10,13 +9,17 @@ class Mods
 	static function get_currentModDirectory()
 		return currentMod != '' ? '$currentMod/' : '';
 
-	public static function getCurrentDirectory()
-		return '${Flags.MODS_FOLDER}/${currentModDirectory.replace('/', '')}';
+	public static function getCurrentDirectory() {
+		var directory = Flags.MODS_FOLDER;
+		if (currentModDirectory.length > 0)
+			directory += '/${currentModDirectory.replace('/', '')}';
+		return directory;
+	}
+
+	public static function getModList() {
+
+	}
 
 	public static function loadMod() {}
-
-	public static function getLoadedMods() {}
-
-	public static function getActiveMods() {}
 	#end
 }

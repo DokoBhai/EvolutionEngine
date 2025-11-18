@@ -72,9 +72,13 @@ class SongData
 
 	public var songName:String;
 	public var songPath:String;
+	public var hasVoices:Bool;
 	public var stage:String;
-	public var characters:Array<Player>;
 	public var bpm:Float;
+	public var scrollSpeed:Float;
+	public var keys:Int;
+	public var postfix:String;
+	public var characters:Array<Player>;
 
 	public function new(songPath:String, ?difficulty:String)
 	{
@@ -97,9 +101,14 @@ class SongData
 
 			this.songPath = songPath;
 			songName = chart.song;
+			hasVoices = chart.hasVoices;
 			stage = chart.stage;
-			characters = chart.characters;
 			bpm = chart.bpm;
+			scrollSpeed = chart.scrollSpeed;
+			keys = chart.keys;
+			postfix = chart.postfix;
+			bpm = chart.bpm;
+			characters = chart.characters;
 
 			this.chart = chart;
 		}

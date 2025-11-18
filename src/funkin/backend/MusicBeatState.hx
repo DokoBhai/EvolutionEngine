@@ -57,6 +57,9 @@ class MusicBeatState extends FlxState implements IBeatListener
 	{
 		super.update(elapsed);
 
+		if (FlxG.keys.justPressed.F4)
+			FlxG.resetState();
+
 		if (__lastStep != Conductor.curStep)
 			for (step in (__lastStep + 1)...Conductor.curStep + 1)
 				onStepHit.dispatch(step);

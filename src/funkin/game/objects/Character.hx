@@ -137,12 +137,12 @@ class Character extends FlxSprite implements IBeatListener {
 	}
 
 	var warn:FlxText;
-
 	public function performFallback() {
+		final _name = name;
 		loadCharacter(FALLBACK_CHARACTER);
 
 		setColorTransform(0, 0, 0, 0.5, 127, 127, 127, 0);
-		warn = new FlxText(x, y, 0, 'ERROR:\nCharacter "$name" not found!');
+		warn = new FlxText(x, y, 0, 'ERROR:\n"$_name" not found!');
 		warn.offset.set(offset.x, offset.y);
 		warn.setFormat(null, 16, 0xFFFF0000, LEFT);
 	}

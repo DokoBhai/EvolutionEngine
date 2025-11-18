@@ -3,7 +3,6 @@ package funkin.game;
 import flixel.math.FlxPoint;
 import funkin.game.objects.Character;
 import funkin.game.objects.HUD;
-import haxe.extern.EitherType;
 
 typedef StageSprite =
 {
@@ -59,7 +58,8 @@ class Stage extends FlxSpriteGroup implements IBeatListener
 			return null;
 	}
 
-	public var characterPos:Array<FlxPoint> = [];
+	public var characterPositions:Array<FlxPoint> = [];
+	public var cameraOffsets:Array<FlxPoint> = [];
 
 	public function new(?stage:StageData)
 	{
@@ -67,9 +67,20 @@ class Stage extends FlxSpriteGroup implements IBeatListener
 		state = MusicBeatState.getState();
 
 		stage ??= {
-			characters: [],
+			characters: [
+				{ x: -100, y: 0,  cameraOffsets: [0, 0] },
+				{ x: 600, y: 200, cameraOffsets: [0, 0] },
+				{ x: 250, y: 150, cameraOffsets: [0, 0] }
+			],
 			sprites: []
 		};
+		data = stage;
+
+		for (char in stage.characters) {
+			final camOffsets = char.cameraOffsets;
+			characterPositions.push(FlxPoint.get(char.x, char.y));
+			cameraOffsets.push(FlxPoint.get(camOffsets[0], camOffsets[1]));
+		}
 	}
 
 	public function beatHit(curBeat:Int):Void {}

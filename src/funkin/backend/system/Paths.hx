@@ -3,8 +3,10 @@ package funkin.backend.system;
 import funkin.backend.system.Mods;
 
 @:publicFields class Paths {
-	inline static function image(key:String):String
-		return getPath('images/$key.${Flags.IMAGE_EXT}');
+	public static var DEBUG_MODE:Bool = true;
+
+	inline static function image(key:String, ?showError:Bool):String
+		return getPath('images/$key.${Flags.IMAGE_EXT}', null, null, null, showError);
 
 	inline static function xml(key:String):String
 		return getPath('$key.xml');
@@ -21,18 +23,18 @@ import funkin.backend.system.Mods;
 	inline static function music(key:String):String
 		return getPath('music/$key.${Flags.MUSIC_EXT}');
 
-	inline static function inst(key:String, ?postfix:String = ''):String {
+	inline static function inst(key:String, ?postfix:String = '', ?showError:Bool):String {
 		final prePath:String = song(key);
 		if (prePath != null)
-			return getPath('$prePath/song/Inst$postfix.${Flags.MUSIC_EXT}');
+			return getPath('$prePath/song/Inst$postfix.${Flags.MUSIC_EXT}', null, null, null, showError);
 
 		return null;
 	}
 
-	inline static function voices(key:String, ?postfix:String = ''):String {
+	inline static function voices(key:String, ?postfix:String = '', ?showError:Bool):String {
 		final prePath:String = song(key);
 		if (prePath != null)
-			return getPath('$prePath/song/Voices$postfix.${Flags.MUSIC_EXT}');
+			return getPath('$prePath/song/Voices$postfix.${Flags.MUSIC_EXT}', null, null, null, showError);
 
 		return null;
 	}
@@ -43,9 +45,11 @@ import funkin.backend.system.Mods;
 	inline static function character(key:String):String
 		return getPath('data/characters/$key', false, Flags.CHAR_EXT);
 
-	inline static function exists(key:String, ?absolute:Bool = false, ?ignoreMods:Bool = #if MODS_ALLOWED false #else true #end):Bool {
+	inline static function exists(key:String, ?absolute:Bool = false, 
+		?ignoreMods:Bool, ?extensions:Array<String>, ?showError:Bool = false):Bool {
+
 		if (key == null) return false;
-		return absolute ? FileUtil.exists(key) : (getPath(key, ignoreMods) != null);
+		return getPath(key, ignoreMods, extensions, absolute ? [''] : null, showError) != null;
 	}
 
 	// For scripts
@@ -74,7 +78,8 @@ import funkin.backend.system.Mods;
 		return returnAbsolute ? getPath(path) : path;
 	}
 
-	static function getPath(path:String, ?ignoreMods:Bool = false, ?extensions:Array<String>, ?includeDir:Array<String>):Null<String> {
+	static function getPath(path:String, ?ignoreMods:Bool = false, ?extensions:Array<String>, ?includeDir:Array<String>, ?showError:Bool):Null<String> {
+		showError ??= DEBUG_MODE;
 		if (path != null) {
 			if (extensions != null)
 				for (i => ext in extensions) {
@@ -85,11 +90,12 @@ import funkin.backend.system.Mods;
 			extensions ??= [''];
 			if (includeDir == null) {
 				includeDir ??= [ // sort in order of hierarchy
-					#if MODS_ALLOWED '${Flags.MODS_FOLDER}/${Mods.currentModDirectory}', #end 
-					'assets/shared', 'assets'
+					#if MODS_ALLOWED Mods.getCurrentDirectory(), #end 
+					'assets'
 				];
 				if (#if MODS_ALLOWED ignoreMods #else true #end) includeDir.shift();
-			}
+			} else if (includeDir.length == 0)
+				includeDir = [''];
 
 			// Me when haxe.io.Path.normalize -TBar
 			while (path.startsWith('../')) {
@@ -106,16 +112,25 @@ import funkin.backend.system.Mods;
 				path = splPath.join('/'); 
 			}
 
-			for (dir in includeDir) {
-				for (ext in extensions) {
-					final trackedPath = '$dir/$path$ext';
+			for (i => dir in includeDir) {
+				if (dir != '')
+					dir += '/';
+				for (j => ext in extensions) {
+					final trackedPath = '$dir$path$ext';
+					// uncomment for a more detailed debug
+					// trace('[$i:$j] trackedPath: ${trackedPath} | [$dir | $path | ${ext == '' ? 'no-ext' : ext}] (${FileUtil.exists(trackedPath) ? 'success' : 'failed'})');
 					if (FileUtil.exists(trackedPath)) {
-						trace('Path found!: $trackedPath');
+						if (showError)
+							trace('Path found!: $trackedPath');
 						return trackedPath;
 					}
 				}
 			}
-			trace('Path not found for: $path');
+
+			if (showError)
+				trace('Path not found for: $path');
+
+			return null;
 		}
 		return null;
 	}

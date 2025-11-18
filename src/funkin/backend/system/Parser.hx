@@ -36,7 +36,6 @@ enum ChartEngineType
 }
 
 // ts so ahh 🥀
-
 @:access(funkin.game.objects.Character)
 @:access(funkin.states.debug.ChartEditor)
 @:access(funkin.game.SongData)
