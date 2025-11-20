@@ -3,11 +3,11 @@ package funkin.backend.utils;
 import haxe.io.Bytes;
 import openfl.utils.ByteArray;
 #if sys
-import sys.io.File;
 import sys.FileSystem;
+import sys.io.File;
 #else
+// import openfl.filesystem.File as OpenFLFile;
 import openfl.utils.Assets as OpenFLAssets;
-import openfl.filesystem.File as OpenFLFile;
 #end
 
 /*
@@ -27,7 +27,7 @@ class FileUtil {
 			#if sys
 			return File.saveContent(filePath, content);
 			#else
-			throw 'saveContent is not supported in non-sys platform!'
+			throw 'saveContent is not supported in non-sys platform!';
 			#end
 		} catch(e:Dynamic) trace('error: ${e.toString()}');
 	}
@@ -61,7 +61,7 @@ class FileUtil {
 			#if sys
 			return File.saveBytes(filePath, bytes);
 			#else
-			throw 'saveBytes is not supported in non-sys platform!'
+			throw 'saveBytes is not supported in non-sys platform!';
 			#end
 		} catch(e:Dynamic) trace('error: ${e.toString()}');
 	}

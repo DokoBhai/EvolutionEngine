@@ -1,7 +1,6 @@
 package funkin.game;
 
 import funkin.game.Character;
-import sys.io.File;
 
 // its a class because i needed the setter okay
 class PixelNoteAnimation
