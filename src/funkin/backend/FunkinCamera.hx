@@ -10,6 +10,8 @@ class FunkinCamera extends FlxCamera {
     public function new() super();
 
     override function update(elapsed:Float) {
+        super.update(elapsed);
+
         if (lerpEnabled)
             zoom = FlxMath.lerp(zoom, defaultCamZoom, getLerpRatio(lerpFactor, elapsed));
 

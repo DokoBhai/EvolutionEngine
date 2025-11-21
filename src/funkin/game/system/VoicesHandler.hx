@@ -25,7 +25,7 @@ class VoicesHandler implements IFlxDestroyable {
 	var __volume:Float = 1;
 
 	function get_time()
-		return (inst?.time ?? 0) + offset;
+		return (inst?.time ?? 0) - offset;
 
 	function get_length()
 		return inst.length;
@@ -62,7 +62,7 @@ class VoicesHandler implements IFlxDestroyable {
 
 	public function new(trackedMusic:FlxSound, songName:String, ?postfix:String = '') {
 		try {
-			if (Paths.exists(Paths.song(songName), true))
+			if (Paths.exists(Paths.song(songName, false, true)))
 				songPath = songName;
 		} catch(e:Dynamic)
 			trace('error: ${e.toString()}');
@@ -72,11 +72,11 @@ class VoicesHandler implements IFlxDestroyable {
 	}
 
 	public function addVoices(?postfix:String = '') {
-		final path = Paths.voices('$songPath$postfix');
+		final path = Paths.voices(songPath, postfix, true);
 		if (Paths.exists(path, true) && !postfixes.exists(postfix)) {
-			var voices = new FlxSound();
-			voices.loadEmbedded(loadSound(path));
+			var voices = FlxG.sound.play(loadSound(path));
 			voices.endTime = inst.endTime;
+			container.push(voices);
 			postfixes.set(postfix, voices);
 
 			if (playing)

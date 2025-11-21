@@ -3,6 +3,9 @@ package funkin.game;
 import funkin.game.*;
 import funkin.game.system.*;
 import funkin.game.system.SongData.Player;
+
+import flixel.math.FlxPoint;
+
 #if sys
 import sys.FileSystem;
 #end
@@ -31,8 +34,7 @@ class PlayState extends ScriptableState
 	public var gameBeatZoom:Float = 0.028;
 	public var hudBeatZoom:Float = 0.023;
 
-	function get___camZoomInterval()
-	{
+	function get___camZoomInterval() {
 		final mult = switch (camBeatEvery)
 		{
 			case MEASURE: 16;
@@ -44,6 +46,7 @@ class PlayState extends ScriptableState
 
 	public var camGame:FunkinCamera;
 	public var camHUD:FunkinCamera;
+	public var camFollow:FlxPoint;
 	public var hud:HUD;
 
 	public var inst:FlxSound;
@@ -51,7 +54,7 @@ class PlayState extends ScriptableState
 
 	public var songName(get, never):String;
 	public var songPath(get, never):String;
-	public var syncThreshold:Float = 500;
+	public var syncThreshold:Float = 25;
 	
 	public var scrollSpeed:Float = 1;
 
@@ -79,7 +82,7 @@ class PlayState extends ScriptableState
 		return isPixelStage = value;
 
 	override function create() {
-		loadSong('say-my-name', getMedianDifficulty('say-my-name'));
+		loadSong('deceived', getMedianDifficulty('deceived'));
 
 		if (songPath != null && Paths.exists('songs/$songPath/scripts'))
 			addScriptsFromDirectory('songs/$songPath/scripts');
@@ -91,6 +94,7 @@ class PlayState extends ScriptableState
 
 		camGame = new FunkinCamera();
 		FlxG.cameras.add(camGame);
+		FlxG.camera = camGame;
 
 		camHUD = new FunkinCamera();
 		camHUD.bgColor.alpha = 0;
@@ -121,8 +125,7 @@ class PlayState extends ScriptableState
 		}
 
 		inst = FlxG.sound.play(loadSound(Paths.inst(songPath)), 0.8, false);
-		if (Paths.exists(Paths.voices(songPath, null, false), false))
-			voices = new VoicesHandler(inst, songPath);
+		voices = new VoicesHandler(inst, songPath);
 
 		for (character in characters)
 			if (Paths.exists(Paths.voices(songPath, '-${character.name}', false), false))
@@ -146,10 +149,11 @@ class PlayState extends ScriptableState
 	override function update(elapsed:Float) {
 		call('update', [elapsed]);
 
-		if (FlxG.sound.music != null)
+		if (inst != null)
 		{
-			if (Math.abs(inst.time - (Conductor.songPosition + Conductor.offset)) > syncThreshold)
+			if (Math.abs((voices?.time ?? inst.time) - (Conductor.songPosition - Conductor.offset)) > syncThreshold) {
 				sync();
+			}
 		}
 
 		// this is obv wip, im js lazy rn
@@ -292,6 +296,7 @@ class PlayState extends ScriptableState
 		super.stepHit(curStep);
 
 		call('stepHit', [curStep]);
+		set('curStep', curStep);
 		callBeatListeners(l -> l.stepHit(curStep));
 
 		if (curStep % __camZoomInterval == 0)
@@ -305,7 +310,16 @@ class PlayState extends ScriptableState
 		super.beatHit(curBeat);
 
 		call('beatHit', [curBeat]);
+		set('curBeat', curBeat);
 		callBeatListeners(l -> l.beatHit(curBeat));
+	}
+
+	override function measureHit(curMeasure:Int) {
+		super.measureHit(curMeasure);
+
+		call('measureHit', [curMeasure]);
+		set('curMeasure', curMeasure);
+		callBeatListeners(l -> l.measureHit(curMeasure));
 	}
 
 	override function call(f:String, ?args:Array<Dynamic>) {

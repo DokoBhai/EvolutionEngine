@@ -106,6 +106,7 @@ class Character extends FlxSprite implements IBeatListener {
 	public var animationOffsets:Map<String, FlxPoint> = [];
 
 	public var characterID:Int = 0;
+	public var cameraOffsets:FlxPoint;
 
 	var __initialized:Bool = false;
 
@@ -126,15 +127,6 @@ class Character extends FlxSprite implements IBeatListener {
 			performFallback();
 
 		__initialized = true;
-	}
-
-	// playstate only
-	public function fetchID() {
-		if (MusicBeatState.getState() is PlayState)
-		{
-			final game = cast(MusicBeatState.getState(), PlayState);
-			characterID = game.characters.indexOf(this);
-		}
 	}
 
 	var warn:FlxText;
@@ -180,6 +172,7 @@ class Character extends FlxSprite implements IBeatListener {
 		name = data.name;
 		icon = data.icon;
 		antialiasing = data.antialiasing;
+		cameraOffsets = FlxPoint.get(data.cameraOffsets[0] ?? 0, data.cameraOffsets[1] ?? 0);
 
 		scale.set(data.scale, data.scale);
 		updateHitbox();
@@ -235,11 +228,15 @@ class Character extends FlxSprite implements IBeatListener {
 		}
 	}
 
+	public inline function getCameraPosition() {
+		final midpoint = getMidpoint();
+		return FlxPoint.get(midpoint.x + cameraOffsets.x, midpoint.y + cameraOffsets.y);
+	}
+
 	public function beatHit(curBeat:Int) {
 		if (!stunned && !specialAnim && curBeat % danceBeatInterval == 0)
 			dance();
 	}
-
 	public function stepHit(curStep:Int) {}
 	public function measureHit(curMeasure:Int) {}
 

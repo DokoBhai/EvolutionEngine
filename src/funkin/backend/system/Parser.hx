@@ -42,15 +42,11 @@ enum ChartEngineType
 @:access(funkin.states.debug.ChartEditor)
 @:access(funkin.game.system.SongData)
 @:access(funkin.game.Stage)
-@:publicFields class Parser
-{
-	static function chart(content:String, ?from:ChartEngineType = EVOLUTION, ?to:ChartEngineType = EVOLUTION):Dynamic
-	{
-		switch (to)
-		{
+@:publicFields class Parser {
+	static function chart(content:String, ?from:ChartEngineType = EVOLUTION, ?to:ChartEngineType = EVOLUTION):Dynamic {
+		switch (to) {
 			case EVOLUTION:
-				switch (from)
-				{
+				switch (from) {
 					case EVOLUTION:
 						var data:Song = TJSON.parse(content);
 						return data;
