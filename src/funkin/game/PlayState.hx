@@ -54,7 +54,7 @@ class PlayState extends ScriptableState
 
 	public var songName(get, never):String;
 	public var songPath(get, never):String;
-	public var syncThreshold:Float = 25;
+	public var syncThreshold:Float = 25; // in ms
 	
 	public var scrollSpeed:Float = 1;
 
@@ -153,6 +153,7 @@ class PlayState extends ScriptableState
 		{
 			if (Math.abs((voices?.time ?? inst.time) - (Conductor.songPosition - Conductor.offset)) > syncThreshold) {
 				sync();
+				trace('synced!');
 			}
 		}
 
@@ -212,8 +213,7 @@ class PlayState extends ScriptableState
 
 	public function startSong() {
 		inst.play();
-		if (voices != null)
-			voices.play();
+		voices.play();
 
 		Conductor.trackedMusic = inst;
 	}
@@ -298,6 +298,9 @@ class PlayState extends ScriptableState
 		call('stepHit', [curStep]);
 		set('curStep', curStep);
 		callBeatListeners(l -> l.stepHit(curStep));
+
+		if (curStep == 0)
+			voices.sync(); // apparently syncs up the vocals on song start?
 
 		if (curStep % __camZoomInterval == 0)
 		{

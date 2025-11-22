@@ -25,7 +25,7 @@ class VoicesHandler implements IFlxDestroyable {
 	var __volume:Float = 1;
 
 	function get_time()
-		return (inst?.time ?? 0) - offset;
+		return container[0].time ?? 0;
 
 	function get_length()
 		return inst.length;
@@ -114,7 +114,7 @@ class VoicesHandler implements IFlxDestroyable {
 	}
 
 	public function sync()
-		forEach(v -> v.time = time);
+		forEach(v -> v.time = inst.time ?? time);
 
 	public function pause() {
 		forEach(v -> v.pause());
