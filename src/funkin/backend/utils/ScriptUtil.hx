@@ -20,7 +20,7 @@ import funkin.backend.macros.ClassMacro;
 		return Type.resolveClass('${ext}_HSX');
 	}
 
-	static function getClassName(clsStr:String):String {
+	@:noUsing static function getClassName(clsStr:String):String {
 		if (StringTools.endsWith(clsStr, "_HSX") || StringTools.endsWith(clsStr, "_HSC"))
 			clsStr = clsStr.substring(0, clsStr.length - 4);
 
@@ -28,7 +28,7 @@ import funkin.backend.macros.ClassMacro;
 		return retVal[retVal.length - 1];
 	}
 
-	static function importResolve(clsName:String, ?checkForAbstract:Null<Bool> = false):Null<Dynamic> {
+	@:noUsing static function importResolve(clsName:String, ?checkForAbstract:Null<Bool> = false):Null<Dynamic> {
 		var cls = Type.resolveClass(clsName);
 		var enm = Type.resolveEnum(clsName);
 		if(checkForAbstract && cls == null) cls = Type.resolveClass('${clsName}_HSC');
@@ -41,7 +41,7 @@ import funkin.backend.macros.ClassMacro;
      * (For HScript use)
      * This may be a bit performance expensive, so please refrain from using this if it's not needed.
      */
-	static inline function wildcardImport(packageName:String):Array<String> {
+	@:noUsing static inline function wildcardImport(packageName:String):Array<String> {
 		var retVal:Array<String> = [];
         #if HSCRIPT_ALLOWED
 		@:privateAccess

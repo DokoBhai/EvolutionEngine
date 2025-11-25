@@ -1,5 +1,6 @@
 package funkin.backend.scripting;
 
+import openfl.display3D.textures.Texture;
 import funkin.backend.utils.ScriptUtil;
 import funkin.backend.macros.Compiler;
 #if HSCRIPT_ALLOWED
@@ -75,20 +76,23 @@ class HScript extends Script {
 		if(interp == null) initInterp();
 
 		options ??= {ignoreErrors: false, isString: false};
+		if(options.isString == null) options.isString = false; // Just making sure
+
 		try
 		{
-			parser.line = 1; // Reset the parser position.
-			expr = parser.parseString(FileUtil.getContent(path), path);
-
+			if (options.parent != null) this.setParent(options.parent);
 			interp.variables.set("this", this);
 			for (tag => value in defaultClasses) {
 				interp.variables.set(tag, value);
 			}
 
-			if (options.parent != null) this.setParent(options.parent);
+			if(!options.isString) {
+				parser.line = 1;
+				expr = parser.parseString(FileUtil.getContent(path), path);
 
-			interp.execute(expr);
-			call("new");
+				interp.execute(expr);
+				call("new");
+			}
 		} catch(e) {
 			if (options.ignoreErrors != null) 
 				if (!options.ignoreErrors) {
@@ -132,8 +136,7 @@ class HScript extends Script {
 				return true;
 			}
 
-			// If all else fails, does a regular wildcard import (VERY SLOW)
-			@:privateAccess
+			// If all else fails, does a regular wildcard import
 			var varsToImport:Array<String> = ScriptUtil.wildcardImport(clsPath.join("."));
 			if(varsToImport != null && varsToImport.length > 0) {
 				for (item in varsToImport) {
@@ -146,11 +149,11 @@ class HScript extends Script {
 	}
 
 	public function onError(e:HScriptError) {
-		trace(Printer.errorToString(e), 0xFFFF0000);
+		trace(Printer.errorToString(e));
 	}
 
 	public function onWarn(e:HScriptError) {
-		trace("[WARNING] " + Printer.errorToString(e), 0xFFC9C900);
+		trace("[WARNING] " + Printer.errorToString(e));
 	}
 
 	public inline function setParent(newParent:Dynamic):Null<Dynamic> {
@@ -159,6 +162,14 @@ class HScript extends Script {
 		interp.scriptObject = newParent;
 		if (newParent.variables != null) interp.publicVariables = newParent.variables;
 		return this;
+	}
+
+	public function execute(codeToRun:String):Dynamic {
+		if (options.isString ?? false && parser != null) {
+			parser.line = 1;
+			return interp.execute(parser.parseString(codeToRun, path));
+		}
+		return null;
 	}
 
 	public function destroy() {
