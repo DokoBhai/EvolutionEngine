@@ -111,12 +111,14 @@ class PlayState extends ScriptableState
 		camHUD.bgColor.alpha = 0;
 		FlxG.cameras.add(camHUD, false);
 
-		playerStrums = new StrumGroup();
-		opponentStrums = new StrumGroup();
-
 		hud = new HUD(this);
 		hud.camera = camHUD;
 		add(hud);
+
+		playerStrums = new StrumGroup();
+		opponentStrums = new StrumGroup();
+		playerStrums.camera = hud.camera;
+		opponentStrums.camera = hud.camera;
 
 		stage = new ScriptableStage(song.stage);
 		add(stage);
