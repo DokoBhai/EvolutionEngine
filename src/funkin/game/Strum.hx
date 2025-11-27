@@ -2,6 +2,7 @@ package funkin.game;
 
 import funkin.game.Character;
 import funkin.game.Note.PixelNoteAnimation;
+import funkin.game.hud.Strumline;
 
 class Strum extends FunkinSprite
 {
@@ -17,6 +18,8 @@ class Strum extends FunkinSprite
 	public var isPixel(default, set):Bool = false;
 	public var pixelMeta(default, set):PixelNoteAnimation;
 	public var texture(default, set):String = FALLBACK_TEXTURE;
+
+	public var strumline:Null<Strumline>;
 
 	public var finishCallback:String->Void;
 

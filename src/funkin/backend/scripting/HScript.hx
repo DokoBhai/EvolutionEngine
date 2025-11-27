@@ -76,7 +76,7 @@ class HScript extends Script {
 		if(interp == null) initInterp();
 
 		options ??= {ignoreErrors: false, isString: false};
-		if(options.isString == null) options.isString = false; // Just making sure
+		options.isString ??= false; // Just making sure
 
 		try
 		{

@@ -5,6 +5,8 @@ import funkin.game.*;
 import funkin.game.system.*;
 import funkin.game.system.SongData.Player;
 
+import funkin.game.hud.StrumGroup;
+
 import flixel.math.FlxPoint;
 
 #if sys
@@ -26,8 +28,8 @@ enum BeatType
 @:access(funkin.game.objects.Character)
 class PlayState extends ScriptableState
 {
-	public var characters:Array<Character> = [];
 	public var stage:ScriptableStage;
+	public var characters:Array<Character> = [];
 
 	var __camZoomInterval(get, never):Int;
 	public var camZoomInterval:Int = 1;
@@ -49,6 +51,11 @@ class PlayState extends ScriptableState
 	public var camHUD:FunkinCamera;
 	public var camFollow:FlxObject;
 	public var hud:HUD;
+
+	public var noteKillWindow:Float = 376; // in ms 
+	public var spawnTime:Float = 2000; // in ms
+	public var playerStrums:StrumGroup;
+	public var opponentStrums:StrumGroup;
 
 	public var inst:FlxSound;
 	public var voices:VoicesHandler;
@@ -104,6 +111,9 @@ class PlayState extends ScriptableState
 		camHUD.bgColor.alpha = 0;
 		FlxG.cameras.add(camHUD, false);
 
+		playerStrums = new StrumGroup();
+		opponentStrums = new StrumGroup();
+
 		hud = new HUD(this);
 		hud.camera = camHUD;
 		add(hud);
@@ -141,6 +151,15 @@ class PlayState extends ScriptableState
 
 		hud.loadStrums();
 		hud.loadNotes();
+
+		for (strumline in hud.strumlines) {
+			for (strum in strumline) {
+				if (strum.cpu)
+					opponentStrums.add(strum);
+				else
+					playerStrums.add(strum);
+			}
+		}
 
 		super.create();
 
@@ -277,20 +296,52 @@ class PlayState extends ScriptableState
 	}
 
 	public function hitNote(note:Note) {
-		var event = new NoteHitEvent(note);
+		var event = new NoteEvent(note);
 		callHScript('noteHit', [event]);
 		if (note.strum.cpu) callHScript('cpuNoteHit', [event]);
 		else callHScript('playerNoteHit', [event]);
 
 		if (!event.cancelled) {
-			if (!note.hit && note.spawned) {
+			if (!note.missed && !note.hit && note.spawned) {
 				if (note.canBeHit) {
 					note.hit = true;
-					note.kill();
 					note.strum.playAnim('confirm', true);
 
 					if (note.character != null)
 						note.character.playAnim(singAnimations[note.noteData] + note.animSuffix, true);
+
+					hud.onNoteDestroyed.dispatch(note);
+					hud.disposeNote(note);
+				}
+			}
+		}
+	}
+
+	public function noteMiss(note:Note) {
+		var event = new NoteEvent(note);
+		callHScript('noteMiss', [event]);
+		if (note.strum.cpu) callHScript('cpuNoteMiss', [event]); // amusia is that you?
+		else callHScript('playerNoteMiss', [event]);
+
+		if (!event.cancelled) {
+			if (!note.missed && !note.hit && note.spawned) {
+				note.missed = true;
+				if (note.character != null)
+					note.character.playAnim('${singAnimations[note.noteData]}miss' + note.animSuffix, true);
+
+				if (note.isOnScreen(hud.camera)) {
+					FlxTween.tween(note, { 
+						alpha: 0,
+						'colorTransform.redOffset':   127,
+						'colorTransform.blueOffset':  127,
+						'colorTransform.greenOffset': 127
+					}, 0.8, { ease: FlxEase.cubeIn, onComplete: twn -> {
+						hud.onNoteDestroyed.dispatch(note);
+						hud.disposeNote(note);
+					} });
+				} else {
+					hud.onNoteDestroyed.dispatch(note);
+					hud.disposeNote(note);
 				}
 			}
 		}

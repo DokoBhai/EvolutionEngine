@@ -43,17 +43,20 @@ class Note extends FunkinSprite
 	public var isPixel(default, set):Bool = false;
 	public var pixelMeta(default, set):PixelNoteAnimation;
 
-	public var parent:Note; // for sustains
+	public var parent:Null<Note>; // for sustains
 	public var spawned:Bool = false;
 	public var canBeHit(get, never):Bool;
 	public var ignoreNote:Bool = false;
 	public var hit:Bool = false;
+	public var missed:Bool = false;
 
-	public var strum:Strum;
+	public var strum:Null<Strum>;
 	public var followPosition:Bool = true;
 	public var followAngle:Bool = true;
 	public var followAlpha:Bool = true;
 	public var cpu(get, never):Bool;
+
+	public var multSpeed:Float = 1;
 
 	public var texture(default, set):String = FALLBACK_TEXTURE;
 

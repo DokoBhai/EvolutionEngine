@@ -4,7 +4,7 @@ import funkin.game.Character;
 import funkin.game.Note;
 import funkin.game.Strum;
 
-class NoteHitEvent extends CancellableEvent
+class NoteEvent extends CancellableEvent
 {
 	public var note:Note;
 

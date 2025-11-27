@@ -1,5 +1,6 @@
 package funkin.game;
 
+import flixel.util.FlxSort;
 import funkin.game.hud.Strumline;
 import funkin.game.hud.NoteGroup;
 import funkin.game.system.SongData;
@@ -9,13 +10,17 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 	public var strumlines:Array<Strumline> = [];
 	public var strums:Array<Strum> = [];
 	public var notes:NoteGroup;
+	public var unspawnNotes:Array<Note> = [];
 	public var game:PlayState;
+
+	public var onNoteDestroyed:FlxTypedSignal<Note->Void>;
 
 	public function new(game:PlayState) {
 		super();
 
 		this.game = game;
-		notes = new NoteGroup();
+
+		onNoteDestroyed = new FlxTypedSignal();
 	}
 
 	public function loadStrums() {
@@ -28,7 +33,8 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 			add(strumline);
 			strumlines.push(strumline);
 
-			for (strum in strumline) strums.push(strum);
+			for (strum in strumline) 
+				strums.push(strum);
 
 			strumline.x = ((FlxG.width / 2) - strumline.width) / 2;
 			if (char.isPlayer)
@@ -41,26 +47,62 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 		for (i => note in song.chart.notes) {
 			var leNote = new Note(note.noteData, false, note.character, null, PlayState.isPixelStage);
 			leNote.strumTime = note.strumTime;
-			leNote.spawned = true;
-			leNote.strum = strumlines[note.character].members[note.noteData];
-			strumlines[note.character].notes.push(leNote);
-			notes.add(leNote);
-			add(leNote);
+
+			final strumline = strumlines[note.character];
+			leNote.strum = strumline.members[note.noteData];
+			strumline.notes.push(leNote);
+			unspawnNotes.push(leNote);
 
 			leNote.get_canBeHit = function()
 				return Math.abs(Conductor.songPosition - leNote.strumTime) <= 188;
 		}
+
+		unspawnNotes.sort(sortByTime);
+
+		notes = new NoteGroup();
+		add(notes);
 	}
 
 	public function updateNotes() {
 		for (note in notes) {
-			if (!note.hit && note.spawned) {
-				note.y = FlxMath.lerp(note.strum.y, (59500 + note.strum.y) * game.scrollSpeed, (note.strumTime - Conductor.songPosition) / game.inst.length);
+			if (!note.hit) {
+				note.y = FlxMath.lerp(note.strum.y, (59500 + note.strum.y) * game.scrollSpeed * note.multSpeed, (note.strumTime - Conductor.songPosition) / game.inst.length);
 		
 				if (Conductor.songPosition >= note.strumTime && note.strum.cpu && !note.ignoreNote)
 					game.hitNote(note);
+
+				if (Conductor.songPosition - note.strumTime > 188 && !note.strum.cpu && !note.ignoreNote)
+					game.noteMiss(note);
+
+				if (Conductor.songPosition - note.strumTime > game.noteKillWindow) {
+					onNoteDestroyed.dispatch(note);
+					disposeNote(note);
+				}
 			}
 		}
+
+		for (note in unspawnNotes) {
+			if (Conductor.songPosition + game.spawnTime >= note.strumTime) {
+				unspawnNotes.remove(note);
+				notes.add(note);
+				note.spawned = true;
+
+				notes.members.sort(sortByTime);
+			}
+		}
+	}
+
+	public static function sortByTime(Obj1:Dynamic, Obj2:Dynamic):Int {
+		if (Obj1 == null || Obj2 == null) return 0;
+		if (!Reflect.hasField(Obj1, "strumTime") || !Reflect.hasField(Obj2, "strumTime")) return 0;
+		return FlxSort.byValues(FlxSort.ASCENDING, Obj1.strumTime, Obj2.strumTime);
+	}
+
+	public function disposeNote(note:Note) {
+		FlxTween.cancelTweensOf(note);
+		if (notes.members.contains(note))
+			notes.remove(note);
+		note.destroy();
 	}
 
 	override function update(elapsed:Float) {
