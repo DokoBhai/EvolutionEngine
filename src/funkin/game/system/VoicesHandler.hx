@@ -25,7 +25,7 @@ class VoicesHandler implements IFlxDestroyable {
 	var __volume:Float = 1;
 
 	function get_time()
-		return container[0].time ?? 0;
+		return container[0]?.time ?? 0;
 
 	function get_length()
 		return inst.length;

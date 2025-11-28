@@ -56,7 +56,9 @@ class Note extends FunkinSprite
 	public var followAlpha:Bool = true;
 	public var cpu(get, never):Bool;
 
+	public var multAlpha:Float = 1;
 	public var multSpeed:Float = 1;
+	public var angleOffset:Float = 0;
 
 	public var texture(default, set):String = FALLBACK_TEXTURE;
 
@@ -197,7 +199,8 @@ class Note extends FunkinSprite
 		super.update(elapsed);
 
 		if (followAlpha) alpha = strum.alpha;
-		if (followAngle) angle = strum.angle;
+		if (followAngle) angle = strum.angle + angleOffset;
 		if (followPosition) x = strum.x;
+		if (multAlpha != 1) alpha = alpha * multAlpha;
 	}
 }

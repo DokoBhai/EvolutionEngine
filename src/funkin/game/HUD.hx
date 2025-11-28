@@ -46,6 +46,7 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 		final song = PlayState.song;
 		for (i => note in song.chart.notes) {
 			var leNote = new Note(note.noteData, false, note.character, null, PlayState.isPixelStage);
+			leNote.y += FlxG.height * camera.zoom;
 			leNote.strumTime = note.strumTime;
 
 			final strumline = strumlines[note.character];
@@ -71,7 +72,7 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 				if (Conductor.songPosition >= note.strumTime && note.strum.cpu && !note.ignoreNote)
 					game.hitNote(note);
 
-				if (Conductor.songPosition - note.strumTime > 188 && !note.strum.cpu && !note.ignoreNote)
+				if (Conductor.songPosition - note.strumTime > 188 && !note.ignoreNote)
 					game.noteMiss(note);
 
 				if (Conductor.songPosition - note.strumTime > game.noteKillWindow) {
@@ -107,7 +108,7 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 
 	override function update(elapsed:Float) {
 		super.update(elapsed);
-
+		
 		updateNotes();
 	}
 

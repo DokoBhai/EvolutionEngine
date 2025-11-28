@@ -90,7 +90,8 @@ class PlayState extends ScriptableState
 		return isPixelStage = value;
 
 	override function create() {
-		loadSong('deceived', getMedianDifficulty('deceived'));
+		final songToLoad = 'unknown-suffering-remix';
+		loadSong(songToLoad, getMedianDifficulty(songToLoad));
 
 		if (songPath != null && Paths.exists('songs/$songPath/scripts'))
 			addScriptsFromDirectory('songs/$songPath/scripts');
@@ -163,6 +164,11 @@ class PlayState extends ScriptableState
 			}
 		}
 
+		if (GameplayModifiers.opponentMode) {
+			for (strumline in hud.strumlines)
+				strumline.cpu = !strumline.cpu;
+		}
+
 		super.create();
 
 		call('createPost');
@@ -176,7 +182,7 @@ class PlayState extends ScriptableState
 
 		if (inst != null)
 		{
-			if (Math.abs((voices?.time ?? inst.time) - (Conductor.songPosition - Conductor.offset)) > syncThreshold) {
+			if (Math.abs((voices.container[0] != null ? voices.time : inst.time) - (Conductor.songPosition - Conductor.offset)) > syncThreshold) {
 				sync();
 				trace('synced!');
 			}
@@ -202,10 +208,14 @@ class PlayState extends ScriptableState
 		call('keyPressed', [key]);
 
 		final index = (['A', 'S', 'UP', 'RIGHT']).indexOf(key);
-		final strum = hud.strumlines[1].members[index];
-		if (!strum.animation.name.contains('confirm')) {
-			strum.allowStatic = false;
-			strum.playAnim('press');
+		for (strumline in hud.strumlines) {
+			if (!strumline.cpu) {
+				final strum = strumline.members[index];
+				if (!strum.animation.name.contains('confirm')) {
+					strum.allowStatic = false;
+					strum.playAnim('press');
+				}
+			}
 		}
 	}
 
@@ -227,8 +237,12 @@ class PlayState extends ScriptableState
 		call('keyJustReleased', [key]);
 
 		final index = (['A', 'S', 'UP', 'RIGHT']).indexOf(key);
-		final strum = hud.strumlines[1].members[index];
-		strum.playStatic();
+		for (strumline in hud.strumlines) {
+			if (!strumline.cpu) {
+				final strum = strumline.members[index];
+				strum.playStatic();
+			}
+		}
 	}
 
 	public function sync() {
@@ -331,20 +345,13 @@ class PlayState extends ScriptableState
 				if (note.character != null)
 					note.character.playAnim('${singAnimations[note.noteData]}miss' + note.animSuffix, true);
 
-				if (note.isOnScreen(hud.camera)) {
-					FlxTween.tween(note, { 
-						alpha: 0,
-						'colorTransform.redOffset':   127,
-						'colorTransform.blueOffset':  127,
-						'colorTransform.greenOffset': 127
-					}, 0.8, { ease: FlxEase.cubeIn, onComplete: twn -> {
-						hud.onNoteDestroyed.dispatch(note);
-						hud.disposeNote(note);
-					} });
-				} else {
-					hud.onNoteDestroyed.dispatch(note);
-					hud.disposeNote(note);
-				}
+				FlxTween.tween(note, { 
+					multAlpha: 0,
+					multSpeed: 0.75,
+					'colorTransform.redOffset': 255,
+					'colorTransform.blueOffset': 255,
+					'colorTransform.greenOffset': 255
+				}, 0.2, { ease: FlxEase.cubeIn });
 			}
 		}
 	}
