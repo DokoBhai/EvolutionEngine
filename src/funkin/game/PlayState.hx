@@ -3,6 +3,7 @@ package funkin.game;
 import flixel.FlxObject;
 import funkin.game.*;
 import funkin.game.system.*;
+import funkin.game.system.SongData.ChartEventGroup;
 import funkin.game.system.SongData.Player;
 
 import funkin.game.hud.StrumGroup;
@@ -13,6 +14,7 @@ import flixel.math.FlxPoint;
 import sys.FileSystem;
 #end
 
+import funkin.backend.scripting.events.*;
 import funkin.backend.scripting.events.game.*;
 
 enum BeatType
@@ -90,7 +92,7 @@ class PlayState extends ScriptableState
 		return isPixelStage = value;
 
 	override function create() {
-		final songToLoad = 'unknown-suffering-remix';
+		final songToLoad = 'say-my-name';
 		loadSong(songToLoad, getMedianDifficulty(songToLoad));
 
 		if (songPath != null && Paths.exists('songs/$songPath/scripts'))
@@ -154,6 +156,7 @@ class PlayState extends ScriptableState
 
 		hud.loadStrums();
 		hud.loadNotes();
+		loadEvents();
 
 		for (strumline in hud.strumlines) {
 			for (strum in strumline) {
@@ -175,6 +178,25 @@ class PlayState extends ScriptableState
 
 		// remove in final builds
 		startSong(); 
+	}
+
+	public var events:Array<ChartEventGroup> = [];
+	function loadEvents() {
+		final songEvents = song?.chart?.events ?? null;
+		if (songEvents != null) {
+			for (eventGroup in songEvents) {
+				for (ev in eventGroup.events) {
+					var scrEvent = new EventLoadEvent(eventGroup.strumTime, ev);
+					call('onEventLoad', [scrEvent]);
+
+					if (scrEvent.cancelled) 
+						eventGroup.events.remove(ev);
+				}
+				events.push(eventGroup);
+			}
+		}
+		events.sort(HUD.sortByTime);
+		call('onEventsLoaded', []);
 	}
 
 	override function update(elapsed:Float) {
@@ -199,9 +221,38 @@ class PlayState extends ScriptableState
 			if (justReleased) keyJustReleased(key);
 		}
 
+		checkForEvent(Conductor.songPosition);
+
 		super.update(elapsed);
 
 		call('updatePost', [elapsed]);
+	}
+
+	function checkForEvent(strumTime:Float) {
+		for (eventGrp in events) {
+			if (strumTime >= eventGrp.strumTime) {
+				onEvent(eventGrp);
+				events.remove(eventGrp);
+			} else
+				break; // no point in iterating on future events
+		}
+	}
+
+	function onEvent(eventGrp:ChartEventGroup) {
+		for (ev in eventGrp.events) {
+			call('onEvent', [ev]);
+			
+			switch(ev.event) { // hardcoded events
+				case 'Move Camera':
+					focusCharacter(ev.values[0]);
+			}
+		}
+	}
+
+	function focusCharacter(characterID:Int) {
+		characterID = int(FlxMath.bound(characterID, 0, characters.length-1));
+		final pos = characters[characterID].getCameraPosition();
+		camFollow.setPosition(pos.x, pos.y);
 	}
 
 	function keyPressed(key:String) {

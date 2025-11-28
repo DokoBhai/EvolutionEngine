@@ -138,6 +138,7 @@ class Character extends FlxSprite implements IBeatListener {
 		warn = new FlxText(x, y, 0, 'ERROR:\n"$_name" not found!');
 		warn.offset.set(offset.x, offset.y);
 		warn.setFormat(null, 16, 0xFFFF0000, LEFT);
+		warn.setPosition(x + (frameWidth - warn.width) / 2, y + (frameHeight - warn.height) / 2);
 	}
 
 	public function loadCharacter(charName:String):Bool {
@@ -230,7 +231,7 @@ class Character extends FlxSprite implements IBeatListener {
 
 	public inline function getCameraPosition() {
 		final midpoint = getMidpoint();
-		return FlxPoint.get(midpoint.x + cameraOffsets.x, midpoint.y + cameraOffsets.y);
+		return FlxPoint.get(midpoint.x + cameraOffsets.x + 150, midpoint.y + cameraOffsets.y - 100);
 	}
 
 	public function beatHit(curBeat:Int) {
@@ -248,10 +249,7 @@ class Character extends FlxSprite implements IBeatListener {
 	override function draw() {
 		super.draw();
 		if (warn != null)
-		{
 			warn.draw();
-			warn.setPosition(x + (frameWidth - warn.width) / 2, y + (frameHeight - warn.height) / 2);
-		}
 	}
 
 	public static function justifyEngine(path:String) {

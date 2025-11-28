@@ -7,6 +7,8 @@ import funkin.game.Character.CodenameCharacter;
 import funkin.game.Character.PsychAnimationData;
 import funkin.game.Character.PsychCharacter;
 import funkin.game.system.SongData.ChartNote;
+import funkin.game.system.SongData.ChartEvent;
+import funkin.game.system.SongData.ChartEventGroup;
 import funkin.game.system.SongData.Player;
 import funkin.game.system.SongData.PsychSection;
 import funkin.game.system.SongData.PsychSong;
@@ -66,11 +68,68 @@ enum ChartEngineType
 							{ name: data.gfVersion, isPlayer: false, isBopper: true,  hideStrumline: true  } // gf
 						];
 
+						var events:Array<ChartEventGroup> = [];
+						for (eventGrp in data.events)
+						{
+							var eventGroup:ChartEventGroup = {
+								strumTime: eventGrp[0],
+								events: []
+							};
+
+							if (eventGrp.length > 1) {
+								final eventData:Array<Array<String>> = eventGrp[1];
+								for (event in eventData)
+								{
+									var chartEvent:ChartEvent = {
+										event: event[0],
+										values: [ event[1], event[2] ]
+									};
+									eventGroup.events.push(chartEvent);
+								}
+								events.push(eventGroup);
+							}
+						}
+
+						function pushEvent(strumTime:Float, event:String, values:Array<Dynamic>):ChartEventGroup {
+							for (eventGroup in events) {
+								if (eventGroup.strumTime == strumTime) {
+									eventGroup.events.push({ event: event, values: values });
+									return eventGroup;
+								}
+							}
+
+							var eventGroup:ChartEventGroup = {
+								strumTime: strumTime,
+								events: [{ event: event, values: values }]
+							};
+							events.push(eventGroup);
+
+							return eventGroup;
+						}
+
 						var notes:Array<ChartNote> = [];
+						var lastSection:PsychSection = null;
+						var beatsElapsed:Int = 0;
+						var curBPM:Float = data.bpm;
 						for (section in data.notes)
 						{
 							final gfSec = section.gfSection;
 							final mustHit = section.mustHitSection;
+
+							if (lastSection != null) {
+								final crochet = 60000 / curBPM;
+								final sectionTime = beatsElapsed * crochet;
+								if (lastSection.mustHitSection != mustHit)
+									pushEvent(sectionTime, 'Move Camera', [ mustHit ? 1 : 0 ]);
+
+								if (section.changeBPM) {
+									curBPM = section.bpm;
+									pushEvent(sectionTime, 'Change BPM', [ section.bpm ]);
+								}
+							}
+							lastSection = section;
+							beatsElapsed += section.sectionBeats;
+
 							for (secNote in section.sectionNotes)
 							{
 								final strumTime = secNote[0];
@@ -79,6 +138,7 @@ enum ChartEngineType
 								var characterID:Int = (gfSec && mustHit && noteData <= 3) ? 2 : -1;
 								if (characterID < 0)
 									characterID = noteData <= 3 ? 0 : 1;
+
 								var note:ChartNote = {
 									strumTime: strumTime,
 									noteData: noteData % 4,
@@ -101,6 +161,7 @@ enum ChartEngineType
 							bpm: data.bpm,
 							scrollSpeed: data.speed,
 							notes: notes,
+							events: events,
 							keys: 4,
 							postfix: '',
 							evoChart: true

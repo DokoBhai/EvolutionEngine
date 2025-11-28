@@ -20,6 +20,18 @@ typedef ChartNote =
 	?noteType:String
 }
 
+typedef ChartEvent =
+{
+	event:String,
+	values:Array<Dynamic>,
+}
+
+typedef ChartEventGroup = 
+{
+	events:Array<ChartEvent>,
+	strumTime:Float
+}
+
 typedef Song =
 {
 	characters:Array<Player>,
@@ -29,6 +41,7 @@ typedef Song =
 	bpm:Float,
 	scrollSpeed:Float,
 	notes:Array<ChartNote>,
+	events:Array<ChartEventGroup>,
 	keys:Int,
 	postfix:String, // for unique Inst/Voices for each difficulties
 	evoChart:Bool
@@ -57,6 +70,13 @@ typedef PsychSong =
 	player2:String, // dad
 	gfVersion:String, // gf
 	notes:Array<PsychSection>,
+	events:Array<Dynamic>,
+		/* Float: strumTime
+		 * Array<Array<String>>: arrays of events with values:
+		 * [0] eventName
+		 * [1] value1
+		 * [2] value2
+		 */
 	splashSkin:String,
 	song:String,
 	needsVoices:Bool,
