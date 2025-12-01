@@ -128,15 +128,22 @@ import funkin.backend.system.Mods;
 				for (j => ext in extensions) {
 					final trackedPath = '$dir$path$ext';
 					// uncomment for a more detailed debug
-					// trace('[$i:$j] trackedPath: ${trackedPath} | [$dir | $path | ${ext == '' ? 'no-ext' : ext}] (${FileUtil.exists(trackedPath) ? 'success' : 'failed'})');
+					// if (!trackedPath.contains('NOTE_assets')) 
+					//     trace('[$i:$j] trackedPath: ${trackedPath} | [$dir | $path | ${ext == '' ? 'no-ext' : ext}] (${FileUtil.exists(trackedPath) ? 'success' : 'failed'})');
+					
 					if (FileUtil.exists(trackedPath)) {
 						return trackedPath;
 					}
 				}
 			}
 
-			if (showError)
-				trace('Path not found for: $path');
+			if (showError) {
+				var exception:String = 'Path not found for: $path';
+				if (extensions.length > 0 && extensions != [''])
+					exception += ' ${extensions}';
+				
+				trace(exception);
+			}
 
 			return null;
 		}

@@ -49,7 +49,8 @@ typedef Song =
 
 typedef PsychSection =
 {
-	sectionBeats:Int,
+	?sectionBeats:Int,
+	?lengthInSteps:Int,
 	sectionNotes:Array<Array<Dynamic>>,
 	/* [0] strumTime, (float)
 	 * [1] noteData, (int)
@@ -142,12 +143,14 @@ class SongData
 			if (path.endsWith('.fnfc'))
 				return VSLICE;
 
-			var json = TJSON.parse(FileUtil.getContent(path));
-			if (Reflect.hasField(json, 'evoChart') && json.evoChart ?? false == true)
+			var jsonContent = FileUtil.getContent(path);
+			if (jsonContent.contains('"evoChart": true'))
 				return EVOLUTION;
-			else if (Reflect.hasField(json, 'validScore'))
+			else if (jsonContent.contains('"validScore":'))
 				return PSYCH;
-			else if (Reflect.hasField(json, 'song') && !(json.song is String))
+
+			var json = TJSON.parse(jsonContent);
+			if (Reflect.hasField(json, 'song') && !(json.song is String))
 				if (Reflect.hasField(json.song, 'validScore'))
 					return PSYCH_LEGACY;
 				else

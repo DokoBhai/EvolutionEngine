@@ -19,8 +19,9 @@ class Strumline extends StrumGroup {
 
 		if (MusicBeatState.getState() is PlayState && characterID != null) {
 			final game = cast(MusicBeatState.getState(), PlayState);
-			if (game?.characters[characterID] != null)
+			if (game?.characters[characterID] != null) {
 				character = game.characters[characterID];
+			}
 		}
 
 		for (i in 0...keys) {

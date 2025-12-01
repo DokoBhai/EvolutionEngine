@@ -1,6 +1,7 @@
 package funkin.backend.scripting.events.game;
 
 import flixel.math.FlxPoint;
+import funkin.game.PlayState;
 import funkin.game.Character;
 import funkin.game.hud.Strumline;
 
@@ -8,16 +9,25 @@ class CameraMoveEvent extends CancellableEvent
 {
 	public var character:Character;
 	public var characterID:Int;
-	public var strumLine:Strumline;
 	public var position:FlxPoint;
+	public var strumLine:Strumline;
 
-	public function new(strumLine:Strumline, position:FlxPoint)
+	public function new(character:Character, position:FlxPoint)
 	{
 		super();
 
-		this.strumLine = strumLine;
+		this.character = character;
 		this.position = position;
-		character = strumLine.character;
 		characterID = character.characterID;
+
+		if (MusicBeatState.getState() is PlayState) {
+			final playState = cast(MusicBeatState.getState(), PlayState);
+			for (strumLine in playState.hud.strumlines) {
+				if (strumLine.character == character) {
+					this.strumLine = strumLine;
+					break;
+				}
+			}
+		}
 	}
 }

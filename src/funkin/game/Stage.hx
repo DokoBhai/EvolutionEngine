@@ -73,8 +73,12 @@ class Stage extends FlxSpriteGroup implements IBeatListener
 			final sourceData = Paths.stage(path);
 			final stageEngine = justifyEngine(sourceData);
 			trace([sourceData, stageEngine]);
-			if (sourceData != null)
+			if (sourceData != null) {
 				data = Parser.stage(FileUtil.getContent(sourceData), stageEngine);
+
+				if (data != null && stageEngine != EVOLUTION)
+					Parser.saveJson('data/stages/$path', data);
+			}
 		}
 
 		data ??= {
@@ -100,9 +104,11 @@ class Stage extends FlxSpriteGroup implements IBeatListener
 		if (path != null) {
 			if (path.endsWith('.xml'))
 				return CODENAME;
-			final parsedJson = TJSON.parse(FileUtil.getContent(path));
-			if (Reflect.hasField(parsedJson, 'evoStage'))
+			final jsonContent = FileUtil.getContent(path);
+			if (jsonContent.contains('"evoStage":'))
 				return EVOLUTION;
+			if (jsonContent.contains('"directory":'))
+				return PSYCH;
 		}
 		return UNKNOWN;
 	}

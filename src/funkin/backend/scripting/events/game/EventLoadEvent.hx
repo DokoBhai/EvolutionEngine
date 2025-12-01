@@ -9,6 +9,7 @@ class EventLoadEvent extends LoadEvent {
 
 	public function new(strumTime:Float, event:ChartEvent) {
 		super(event);
+		
 		this.event = event;
 		this.strumTime = strumTime;
 		values = event.values;

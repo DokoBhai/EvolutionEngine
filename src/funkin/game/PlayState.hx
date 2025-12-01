@@ -4,6 +4,7 @@ import flixel.FlxObject;
 import funkin.game.*;
 import funkin.game.system.*;
 import funkin.game.system.SongData.ChartEventGroup;
+import funkin.game.system.SongData.ChartEvent;
 import funkin.game.system.SongData.Player;
 
 import funkin.game.hud.StrumGroup;
@@ -32,6 +33,10 @@ class PlayState extends ScriptableState
 {
 	public var stage:ScriptableStage;
 	public var characters:Array<Character> = [];
+	public var boyfriend:Character;
+	public var bf:Character;
+	public var dad:Character;
+	public var gf:Character;
 
 	var __camZoomInterval(get, never):Int;
 	public var camZoomInterval:Int = 1;
@@ -92,7 +97,7 @@ class PlayState extends ScriptableState
 		return isPixelStage = value;
 
 	override function create() {
-		final songToLoad = 'say-my-name';
+		final songToLoad = 'unknown-suffering';
 		loadSong(songToLoad, getMedianDifficulty(songToLoad));
 
 		if (songPath != null && Paths.exists('songs/$songPath/scripts'))
@@ -102,6 +107,11 @@ class PlayState extends ScriptableState
 
 		if (FlxG.sound.music != null)
 			FlxG.sound.music.stop();
+
+		Rating.add('sick', 45, 350);
+		Rating.add('good', 90, 250);
+		Rating.add('bad', 135, 100);
+		Rating.add('shit', 188, 100);
 
 		camGame = new FunkinCamera();
 		FlxG.cameras.add(camGame);
@@ -142,6 +152,12 @@ class PlayState extends ScriptableState
 			character.characterID = i;
 			add(character);
 		}
+
+		dad = first(characters.filter(c -> return !c.isPlayer && !c.isBopper));
+		bf = first(characters.filter(c -> return c.isPlayer && !c.isBopper));
+		gf = first(characters.filter(c -> return c.isBopper));
+		boyfriend = bf;
+		focusCharacter();
 
 		inst = FlxG.sound.play(loadSound(Paths.inst(songPath)), 0.8, false);
 		voices = new VoicesHandler(inst, songPath);
@@ -231,28 +247,45 @@ class PlayState extends ScriptableState
 	function checkForEvent(strumTime:Float) {
 		for (eventGrp in events) {
 			if (strumTime >= eventGrp.strumTime) {
-				onEvent(eventGrp);
+				for (event in eventGrp.events)
+					onEvent(event, eventGrp.strumTime);
 				events.remove(eventGrp);
 			} else
 				break; // no point in iterating on future events
 		}
 	}
 
-	function onEvent(eventGrp:ChartEventGroup) {
-		for (ev in eventGrp.events) {
-			call('onEvent', [ev]);
-			
-			switch(ev.event) { // hardcoded events
+	function onEvent(event:ChartEvent, ?strumTime:Float = 0) {
+		var scriptEvent = new EventTriggeredEvent(event, strumTime);
+		call('onEvent', [scriptEvent]);
+		
+		if (!scriptEvent.cancelled) {
+			switch (event.event) { // hardcoded events
 				case 'Move Camera':
-					focusCharacter(ev.values[0]);
+					focusCharacter(int(event.values[0]));
+				case 'Change Character':
+					final character = characterFromID(event.values[0]);
+					character.loadCharacter(event.values[1]);
+				case 'Play Animation':
+					final character = characterFromID(event.values[1]);	
+					character.playAnim(event.values[0], true);
+					character.specialAnim = true;
+				case 'Add Camera Zoom':
+					camGame.zoom += event.values[0];
+					camHUD.zoom += event.values[1];
 			}
 		}
 	}
 
-	function focusCharacter(characterID:Int) {
+	function focusCharacter(characterID:Int = 0) {
 		characterID = int(FlxMath.bound(characterID, 0, characters.length-1));
-		final pos = characters[characterID].getCameraPosition();
-		camFollow.setPosition(pos.x, pos.y);
+		final character = characters[characterID];
+		final pos = character.getCameraPosition();
+
+		var event:CameraMoveEvent = new CameraMoveEvent(character, pos);
+		call('onCameraMove', [event]);
+		if (!event.cancelled)
+			camFollow.setPosition(event.position.x, event.position.y);
 	}
 
 	function keyPressed(key:String) {
@@ -343,8 +376,13 @@ class PlayState extends ScriptableState
 		return null;
 	}
 
-	public function characterFromID(id:Int)
-		return characters[id];
+	public function characterFromID(id:Int):Null<Character> {
+		for (i => char in characters) {
+			if (char.characterID == id)
+				return char;
+		}
+		return null;
+	}
 
 	public function characterIDFromName(name:String):Int {
 		for (i => char in characters) {
@@ -363,25 +401,41 @@ class PlayState extends ScriptableState
 	}
 
 	public function hitNote(note:Note) {
-		var event = new NoteEvent(note);
-		callHScript('noteHit', [event]);
-		if (note.strum.cpu) callHScript('cpuNoteHit', [event]);
-		else callHScript('playerNoteHit', [event]);
+		final rating = Rating.judgeRating(note.strumTime, Conductor.songPosition);
+		note.rating = rating;
 
-		if (!event.cancelled) {
-			if (!note.missed && !note.hit && note.spawned) {
-				if (note.canBeHit) {
-					note.hit = true;
-					note.strum.playAnim('confirm', true);
+		if (rating != 'miss') {
+			var event = new NoteEvent(note);
+			callHScript('noteHit', [event]);
+			if (note.strum.cpu) callHScript('cpuNoteHit', [event]);
+			else callHScript('playerNoteHit', [event]);
 
-					if (note.character != null)
-						note.character.playAnim(singAnimations[note.noteData] + note.animSuffix, true);
+			if (!event.cancelled) {
+				if (!note.missed && !note.hit && note.spawned) {
+					if (note.canBeHit) {
+						note.hit = true;
+						note.strum.playAnim('confirm', true);
 
-					hud.onNoteDestroyed.dispatch(note);
-					hud.disposeNote(note);
+						if (note.character != null)
+							note.character.playAnim(singAnimations[note.noteData] + note.animSuffix, true);
+
+						hud.onNoteDestroyed.dispatch(note);
+						hud.disposeNote(note);
+
+						if (!note.cpu) {
+							var ratingPop = Popup.recycle(300, 0, Paths.image('gameplay/$rating'));
+							ratingPop.scale.set(0.6, 0.6);
+							ratingPop.updateHitbox();
+							ratingPop.pop();
+							add(ratingPop);
+						}
+
+						return;
+					}
 				}
 			}
-		}
+			note.rating = '';
+		} else noteMiss(note);
 	}
 
 	public function noteMiss(note:Note) {
@@ -447,7 +501,10 @@ class PlayState extends ScriptableState
 
 	function callBeatListeners(f:Dynamic->Void) {
 		for (character in characters)
-			f(character);
+			try {
+				f(character);
+			} catch(e:Dynamic)
+				trace(e.toString());
 
 		f(stage);
 		f(hud);

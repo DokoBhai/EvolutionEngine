@@ -77,6 +77,15 @@ enum ChartEngineType
 							};
 
 							if (eventGrp.length > 1) {
+								function resolveCharacterID(charName:Dynamic):Dynamic {
+									if (charName is Int) return charName;
+									return switch(charName) {
+										case 'bf'  | 'boyfriend'  | 'player': 1;
+										case 'gf'  | 'girlfriend' | 'bopper' | 'speaker': 2;
+										default: 0;
+									}
+								}
+
 								final eventData:Array<Array<String>> = eventGrp[1];
 								for (event in eventData)
 								{
@@ -84,6 +93,18 @@ enum ChartEngineType
 										event: event[0],
 										values: [ event[1], event[2] ]
 									};
+
+									switch(event[0]) { // changed values
+										case 'Change Character':
+											chartEvent.values[0] = resolveCharacterID(event[1]);
+										case 'Play Animation':
+											chartEvent.values[1] = resolveCharacterID(event[0]);
+										case 'Add Camera Zoom':
+											for (i => value in chartEvent.values)
+												chartEvent.values[i] = Std.parseFloat(value);
+
+									}
+
 									eventGroup.events.push(chartEvent);
 								}
 								events.push(eventGroup);
@@ -128,7 +149,7 @@ enum ChartEngineType
 								}
 							}
 							lastSection = section;
-							beatsElapsed += section.sectionBeats;
+							beatsElapsed += section?.sectionBeats ?? int((section?.lengthInSteps ?? 0) / 4);
 
 							for (secNote in section.sectionNotes)
 							{
@@ -169,14 +190,10 @@ enum ChartEngineType
 						return returnData;
 					case PSYCH_LEGACY:
 						var data:PsychSong = TJSON.parse(content).song;
-						if (Reflect.hasField(data, 'notes'))
-						{
-							for (section in data.notes)
-							{
-								if (section.sectionNotes != null && section.sectionNotes?.length ?? 0 > 0 && section.mustHitSection)
-								{
-									for (note in section.sectionNotes)
-									{
+						if (Reflect.hasField(data, 'notes')) {
+							for (section in data.notes) {
+								if (section.sectionNotes != null && section.sectionNotes?.length ?? 0 > 0 && section.mustHitSection) {
+									for (note in section.sectionNotes) {
 										if (note[1] > 3) // noteData
 											note[1] = note[1] % 4;
 										else

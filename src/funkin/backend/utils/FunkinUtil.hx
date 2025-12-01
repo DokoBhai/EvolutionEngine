@@ -58,7 +58,7 @@ import openfl.utils.Assets as OpenFLAssets;
 		return success;
 	}
 
-	static inline function first<T>(list:Array<T>, ?toFind:T):T
+	static function first<T>(list:Array<T>, ?toFind:T):T
 	{
 		if (toFind != null)
 			return list.filter(e -> e == toFind).shift();
@@ -68,7 +68,7 @@ import openfl.utils.Assets as OpenFLAssets;
 		return null;
 	}
 
-	static inline function last<T>(list:Array<T>, ?toFind:T):T
+	static function last<T>(list:Array<T>, ?toFind:T):T
 	{
 		if (toFind != null)
 			return list.filter(e -> e == toFind).pop();

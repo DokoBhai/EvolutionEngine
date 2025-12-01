@@ -47,6 +47,7 @@ class Note extends FunkinSprite
 	public var spawned:Bool = false;
 	public var canBeHit(get, never):Bool;
 	public var ignoreNote:Bool = false;
+	public var rating:String = ''; // unused for sustains
 	public var hit:Bool = false;
 	public var missed:Bool = false;
 

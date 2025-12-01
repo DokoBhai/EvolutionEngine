@@ -92,7 +92,8 @@ class Character extends FlxSprite implements IBeatListener {
 	public var name(default, null):String;
 	public var icon(default, null):String;
 	public var isPlayer(default, set):Bool = false;
-
+	
+	public var isBopper:Bool = false; // for playstate (gf)
 	public var hideStrumline:Bool = false; // for playstate
 	public var allowSing:Bool = false; // for playstate
 	public var stunned:Bool = false;
@@ -142,25 +143,34 @@ class Character extends FlxSprite implements IBeatListener {
 	}
 
 	public function loadCharacter(charName:String):Bool {
+		animationList = [];
+		animationData = [];
+		animationOffsets = [];
+
 		final sourceData = Paths.character(charName);
 		final charEngine = justifyEngine(sourceData ?? '');
 		if (sourceData != null)
 		{
+			name = charName;
+
 			var data = Parser.character(FileUtil.getContent(sourceData), charEngine);
+			trace('Loaded Character from: ${[sourceData]}');
 
 			if (data == null)
 				return false;
 
-			if (charEngine != EVOLUTION)
-			{
+			if (charEngine != EVOLUTION) {
 				data.name = name;
 				Parser.saveJson('data/characters/$charName', data);
 			}
 
 			buildCharacter(data);
 
-			if (warn != null)
+			if (warn != null) {
+				setColorTransform(1, 1, 1, 1, 0, 0, 0, 0);
 				warn.destroy();
+				warn = null;
+			}
 
 			return true;
 		}
@@ -183,9 +193,12 @@ class Character extends FlxSprite implements IBeatListener {
 		frames = loadSparrowAtlas('characters/${data.source}');
 		for (anim in data.animations)
 		{
-			if (anim.indices != null && anim.indices?.length ?? 0 > 0)
-				animation.addByIndices(anim.animName, anim.prefix, anim.indices, '.${Flags.IMAGE_EXT}', anim.frameRate, anim.looped, data.flipped);
-			else
+			if (anim.indices != null && anim.indices?.length ?? 0 > 0) {
+				trace('loaded indices: ${anim.indices} for character $name');
+				trace('indices handled: $anim');
+				trace('---');
+				animation.addByIndices(anim.animName, anim.prefix, anim.indices, '', anim.frameRate, anim.looped, data.flipped);
+			} else
 				animation.addByPrefix(anim.animName, anim.prefix, anim.frameRate, anim.looped, data.flipped);
 
 			animationData.set(anim.animName, anim);
@@ -198,20 +211,22 @@ class Character extends FlxSprite implements IBeatListener {
 	}
 
 	public function playAnim(animName:String, ?forced:Bool = false) {
-		animation.play(animName, forced);
-		if (animName.contains('sing'))
-			holdTime = 0;
+		if (animationList.contains(animName)) {
+			animation.play(animName, forced);
+			if (animName.contains('sing'))
+				holdTime = 0;
 
-		offset = animationOffsets.get(animName);
+			offset = animationOffsets.get(animName);
+		} else
+			trace('Character $name does not have animation "$animName".');
 	}
 
 	var __danceDirection:String = 'left';
 	public function dance(?forced:Bool = false) {
-		if (data != null)
-		{
-			if ((holdTime >= (Conductor.stepCrochet * 0.0011 * data.holdTime))
-				&& (animation.name ?? 'idle').contains('sing')
-					|| (animation.name ?? 'idle').contains('dance') || (animation.name ?? 'idle') == 'idle' || forced)
+		if (data != null) {
+			if ((holdTime >= (Conductor.stepCrochet * 0.0011 * data.holdTime)
+				&& (animation.name ?? 'idle').contains('sing'))
+				|| (animation.name ?? 'idle').contains('dance') || (animation.name ?? 'idle') == 'idle' || forced)
 			{
 				if (animationList.contains('danceLeft') && __danceDirection == 'right')
 				{
@@ -230,20 +245,26 @@ class Character extends FlxSprite implements IBeatListener {
 	}
 
 	public inline function getCameraPosition() {
-		final midpoint = getMidpoint();
-		return FlxPoint.get(midpoint.x + cameraOffsets.x + 150, midpoint.y + cameraOffsets.y - 100);
+		final midpoint = getGraphicMidpoint();
+		return FlxPoint.get(midpoint.x + cameraOffsets.x, midpoint.y + cameraOffsets.y);
 	}
 
 	public function beatHit(curBeat:Int) {
-		if (!stunned && !specialAnim && curBeat % danceBeatInterval == 0)
+		if (!stunned && !specialAnim && curBeat % danceBeatInterval == 0) {
 			dance();
+			var a:Array<Dynamic> = [(holdTime >= (Conductor.stepCrochet * 0.0011 * data.holdTime)), (animation.name ?? 'idle').contains('sing')];
+		}
 	}
 	public function stepHit(curStep:Int) {}
 	public function measureHit(curMeasure:Int) {}
 
 	override function update(elapsed:Float) {
 		super.update(elapsed);
+
 		holdTime += elapsed;
+
+		if (specialAnim && animation.curAnim.finished)
+			specialAnim = false;
 	}
 
 	override function draw() {
@@ -257,7 +278,7 @@ class Character extends FlxSprite implements IBeatListener {
 		{
 			if (path.endsWith('.xml'))
 				return CODENAME;
-			else if (Reflect.hasField(TJSON.parse(FileUtil.getContent(path)), 'image'))
+			else if (FileUtil.getContent(path).contains('"image":'))
 				return PSYCH;
 			else
 				return EVOLUTION;
