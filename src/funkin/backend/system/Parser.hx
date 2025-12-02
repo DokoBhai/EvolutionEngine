@@ -56,27 +56,35 @@ enum ChartEngineType
 						// wip
 						return {};
 					case PSYCH:
-						var unsafeJson = TJSON.parse(content);
-						var chartJson:PsychSong = unsafeJson;
-						if (Reflect.hasField(unsafeJson, 'song') && !(unsafeJson.song is String)) // check for legacy
-							chartJson = chart(content, PSYCH_LEGACY);
+						var unsafeJson:Dynamic = TJSON.parse(content);
+						var chartJson:PsychSong;
+						if (unsafeJson.song != null && !(unsafeJson.song is String)) { // check for legacy
+							return chart(content, PSYCH_LEGACY);
+						} else
+							chartJson = cast unsafeJson;
 
 						var data:PsychSong = chartJson;
 						var characters:Array<Player> = [
 							{ name: data.player2,   isPlayer: false, isBopper: false, hideStrumline: false }, // dad
 							{ name: data.player1,   isPlayer: true,  isBopper: false, hideStrumline: false }, // bf
-							{ name: data.gfVersion, isPlayer: false, isBopper: true,  hideStrumline: true  } // gf
+							{ name: data.gfVersion, isPlayer: false, isBopper: true,  hideStrumline: true  }  // gf
 						];
 
 						var events:Array<ChartEventGroup> = [];
 						for (eventGrp in data.events)
 						{
+							if (eventGrp.strumTime != null)
+								continue; // weird bug, fix later
+
+							final strumTime:Float = eventGrp[0];
+							final groupEvents:Array<Array<String>> = eventGrp[1];
+
 							var eventGroup:ChartEventGroup = {
-								strumTime: eventGrp[0],
+								strumTime: strumTime,
 								events: []
 							};
 
-							if (eventGrp.length > 1) {
+							if (groupEvents.length > 0) {
 								function resolveCharacterID(charName:Dynamic):Dynamic {
 									if (charName is Int) return charName;
 									return switch(charName) {
@@ -86,8 +94,7 @@ enum ChartEngineType
 									}
 								}
 
-								final eventData:Array<Array<String>> = eventGrp[1];
-								for (event in eventData)
+								for (event in groupEvents)
 								{
 									var chartEvent:ChartEvent = {
 										event: event[0],
@@ -102,14 +109,13 @@ enum ChartEngineType
 										case 'Add Camera Zoom':
 											for (i => value in chartEvent.values)
 												chartEvent.values[i] = Std.parseFloat(value);
-
 									}
-
 									eventGroup.events.push(chartEvent);
 								}
 								events.push(eventGroup);
 							}
 						}
+						trace('--');
 
 						function pushEvent(strumTime:Float, event:String, values:Array<Dynamic>):ChartEventGroup {
 							for (eventGroup in events) {
@@ -150,29 +156,33 @@ enum ChartEngineType
 							}
 							lastSection = section;
 							beatsElapsed += section?.sectionBeats ?? int((section?.lengthInSteps ?? 0) / 4);
+							
+							if (section.sectionNotes != null) {
+								for (secNote in section.sectionNotes)
+								{
+									final strumTime = secNote[0];
+									final noteData = secNote[1];
+									final susLen = secNote[2];
+									var characterID:Int = (gfSec && mustHit && noteData <= 3) ? 2 : -1;
+									if (characterID < 0)
+										characterID = noteData <= 3 ? 0 : 1;
 
-							for (secNote in section.sectionNotes)
-							{
-								final strumTime = secNote[0];
-								final noteData = secNote[1];
-								final susLen = secNote[2];
-								var characterID:Int = (gfSec && mustHit && noteData <= 3) ? 2 : -1;
-								if (characterID < 0)
-									characterID = noteData <= 3 ? 0 : 1;
+									var note:ChartNote = {
+										strumTime: strumTime,
+										noteData: noteData % 4,
+										sustainLength: susLen,
+										character: characterID
+									}
 
-								var note:ChartNote = {
-									strumTime: strumTime,
-									noteData: noteData % 4,
-									sustainLength: susLen,
-									character: characterID
+									if (secNote.length > 3) // has noteType
+										note.noteType = secNote[3];
+
+									notes.push(note);
 								}
-
-								if (secNote.length > 3) // has noteType
-									note.noteType = secNote[3];
-
-								notes.push(note);
 							}
 						}
+						trace('**');
+						trace('##');
 
 						var returnData:Song = {
 							characters: characters,
