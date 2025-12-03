@@ -19,7 +19,7 @@ class PreloadState extends MusicBeatState {
 		loadedTxt.setFormat(Paths.font('vcr'), 12);
 		add(loadedTxt);
 
-        add(new FlxSprite(0, FlxG.height - 100).makeGraphic(FlxG.width, 100, 0xFF000000));
+        add(new FlxSprite(0, FlxG.height - 50).makeGraphic(FlxG.width, 50, 0xFF000000));
     
         progressTxt = new FlxText(5, 5, 0, 'Progress: 0%');
         progressTxt.setFormat(Paths.font('funkin'), 24);

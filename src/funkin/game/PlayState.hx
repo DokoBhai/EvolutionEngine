@@ -1,6 +1,8 @@
 package funkin.game;
 
 import flixel.FlxObject;
+import flixel.text.FlxText.FlxTextFormatMarkerPair;
+
 import funkin.game.*;
 import funkin.game.system.*;
 import funkin.game.system.SongData.ChartEventGroup;
@@ -76,6 +78,8 @@ class PlayState extends ScriptableState
 	public var songName(get, never):String;
 	public var songPath(get, never):String;
 	public var syncThreshold:Float = 25; // in ms
+	
+	public var pressLeEnter:FlxText;
 	
 	public var scrollSpeed:Float = 1;
 
@@ -168,6 +172,9 @@ class PlayState extends ScriptableState
 		inst = FlxG.sound.play(loadSound(Paths.inst(songPath)), 0.8, false);
 		voices = new VoicesHandler(inst, songPath);
 
+		inst.pause();
+		voices.pause();
+
 		for (character in characters)
 			if (Paths.exists(Paths.voices(songPath, '-${character.name}', false), false))
 				voices.addVoices('-${character.name}');
@@ -198,8 +205,15 @@ class PlayState extends ScriptableState
 
 		call('createPost');
 
-		// remove in final builds
-		startSong();
+		pressLeEnter = new FlxText(0, 0, 0);
+		pressLeEnter.camera = camHUD;
+		pressLeEnter.setFormat(Paths.font('funkin'), 26, -1, CENTER, OUTLINE, 0xFF000000);
+		pressLeEnter.applyMarkup('Press <y>ENTER<y> to Start the Song', [
+			new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFFFFF00), '<y>')
+		]);
+		pressLeEnter.borderSize = 2;
+		pressLeEnter.screenCenter();
+		add(pressLeEnter);
 	}
 
 	public var events:Array<ChartEventGroup> = [];
@@ -251,6 +265,7 @@ class PlayState extends ScriptableState
 		call('onEventsLoaded', []);
 	}
 
+	var allowStart:Bool = true;
 	override function update(elapsed:Float) {
 		call('update', [elapsed]);
 
@@ -271,6 +286,13 @@ class PlayState extends ScriptableState
 			if (pressed) keyPressed(key);
 			if (justPressed) keyJustPressed(key);
 			if (justReleased) keyJustReleased(key);
+		}
+
+		if (FlxG.keys.justPressed.ENTER && allowStart) {
+			allowStart = false;
+			startSong();
+
+			pressLeEnter.kill();
 		}
 
 		checkForEvent(Conductor.songPosition);
