@@ -58,6 +58,8 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 				return Math.abs(Conductor.songPosition - leNote.strumTime) <= 188;
 		}
 
+		record('[loadNotes] Iterated through chart\'s notes');
+
 		unspawnNotes.sort(sortByTime);
 
 		notes = new NoteGroup();

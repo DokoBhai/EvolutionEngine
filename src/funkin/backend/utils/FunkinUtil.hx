@@ -31,7 +31,7 @@ import sys.thread.Thread;
 		if (Paths.sparrowExists(path))
 			sprite.frames = loadSparrowAtlas(path, showError);
 		else
-			sprite.loadGraphic(Paths.image(path, showError));
+			sprite.loadGraphic(PrecacheUtil.image(path));
 	}
 
 	static inline function loadSound(path:String, ?reload:Bool = false) {
@@ -87,6 +87,20 @@ import sys.thread.Thread;
 		#else
 		return f();
 		#end
+	}
+
+	static function record(tag:String = '', newRec:Bool = false) {
+		static var _prevRecord:Float = 0;
+		if (newRec)
+			_prevRecord = 0;
+
+		final elapsed:Float = Sys.cpuTime();
+		final diff:Float = newRec ? 0 : elapsed - _prevRecord;
+		_prevRecord = elapsed;
+
+		trace('[$tag] delta: $diff');
+
+		return diff;
 	}
 
 	static function startsWithAny(str:String, starts:Array<String>)

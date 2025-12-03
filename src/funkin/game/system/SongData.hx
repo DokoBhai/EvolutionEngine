@@ -109,14 +109,10 @@ class SongData
 		final sourceData = Paths.chart(songPath, difficulty);
 		final chartEngine = justifyEngine(sourceData);
 
-		#if !web
-		trace([sourceData, chartEngine]);
-		#end
-
 		var chart:Song;
 		if (sourceData != null)
 		{
-			chart = Parser.chart(FileUtil.getContent(sourceData), chartEngine);
+			chart = Parser.chart(sourceData, chartEngine);
 
 			if (chartEngine != EVOLUTION)
 				Parser.saveJson('songs/$songPath/charts/$difficulty', chart);

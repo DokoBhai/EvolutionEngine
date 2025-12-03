@@ -154,7 +154,6 @@ class Character extends FlxSprite implements IBeatListener {
 			name = charName;
 
 			var data = Parser.character(sourceData, charEngine);
-			trace('Loaded Character from: $sourceData');
 
 			if (data == null)
 				return false;

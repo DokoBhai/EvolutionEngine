@@ -107,7 +107,7 @@ class PlayState extends ScriptableState
 		return isPixelStage = value;
 
 	override function create() {
-		final songToLoad = 'unknown-suffering';
+		final songToLoad = 'say-my-name';
 		loadSong(songToLoad, getMedianDifficulty(songToLoad));
 
 		if (songPath != null && Paths.exists('songs/$songPath/scripts'))
@@ -143,9 +143,13 @@ class PlayState extends ScriptableState
 		playerStrums.camera = hud.camera;
 		opponentStrums.camera = hud.camera;
 
+		record('initial', true);
+
 		stage = new ScriptableStage(song.stage);
 		add(stage);
 		camGame.defaultCamZoom = stage?.defaultCamZoom ?? 0.9;
+
+		record('Stage Creation');
 
 		scrollSpeed = (song?.scrollSpeed ?? 1) * GameplayModifiers.scrollMult;
 
@@ -169,6 +173,8 @@ class PlayState extends ScriptableState
 		boyfriend = bf;
 		focusCharacter();
 
+		record('Character Creation');
+
 		inst = FlxG.sound.play(loadSound(Paths.inst(songPath)), 0.8, false);
 		voices = new VoicesHandler(inst, songPath);
 
@@ -183,8 +189,16 @@ class PlayState extends ScriptableState
 			if (Paths.exists(Paths.voices(songPath, postfix, false), false))
 				voices.addVoices(postfix);
 
+		record('Music Setup');
+
 		hud.loadStrums();
+
+		record('Strums Loaded');
+
 		hud.loadNotes();
+
+		record('Notes Loaded');
+
 		loadEvents();
 
 		for (strumline in hud.strumlines) {
@@ -204,6 +218,7 @@ class PlayState extends ScriptableState
 		super.create();
 
 		call('createPost');
+
 
 		pressLeEnter = new FlxText(0, 0, 0);
 		pressLeEnter.camera = camHUD;
@@ -255,6 +270,7 @@ class PlayState extends ScriptableState
 				events.push(eventGroup);
 			}
 		}
+		record('Looped through Events');
 
 		for (change in characterChanges) {
 			final char = change.character;
@@ -481,7 +497,7 @@ class PlayState extends ScriptableState
 						hud.disposeNote(note);
 
 						if (!note.cpu) {
-							var ratingPop = Popup.recycle(300, 0, Paths.image('gameplay/$rating'));
+							var ratingPop = Popup.recycle(300, 0, PrecacheUtil.image('gameplay/$rating'));
 							ratingPop.scale.set(0.6, 0.6);
 							ratingPop.updateHitbox();
 							ratingPop.pop();

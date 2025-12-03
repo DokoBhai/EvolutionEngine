@@ -19,7 +19,7 @@ class ScriptableStage extends Stage implements IScriptable
 		super(stage);
 
 		#if HSCRIPT_ALLOWED
-		if (Paths.exists(Paths.hscript(stage, 'data/stages'), true))
+		if (Paths.exists(Paths.hscript(stage, 'data/stages')))
 			hscript = new HScript(Paths.hscript(stage, 'data/stages'), {parent: MusicBeatState.getState(), ignoreErrors: false});
 		#end
 	}

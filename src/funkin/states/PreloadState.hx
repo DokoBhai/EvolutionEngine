@@ -11,7 +11,11 @@ import sys.FileSystem;
 class PreloadState extends MusicBeatState {
     var progressTxt:FlxText;
     var loadedTxt:FlxText;
+    var etaTxt:FlxText;
     var bar:FlxSprite;
+
+    var eta:Float = 0;
+    
     override function create() {
         super.create();
 
@@ -19,12 +23,17 @@ class PreloadState extends MusicBeatState {
 		loadedTxt.setFormat(Paths.font('vcr'), 12);
 		add(loadedTxt);
 
-        add(new FlxSprite(0, FlxG.height - 50).makeGraphic(FlxG.width, 50, 0xFF000000));
+        add(new FlxSprite(0, FlxG.height - 72.5).makeGraphic(FlxG.width, 73, 0xFF000000));
     
-        progressTxt = new FlxText(5, 5, 0, 'Progress: 0%');
+        progressTxt = new FlxText(5, 5, FlxG.width, 'Progress: 0%');
         progressTxt.setFormat(Paths.font('funkin'), 24);
-        progressTxt.y = FlxG.height - progressTxt.height - 25;
+        progressTxt.y = FlxG.height - progressTxt.height - 37.5;
         add(progressTxt);
+
+        etaTxt = new FlxText(5, 5, FlxG.width, 'ETA: Unknown');
+		etaTxt.setFormat(Paths.font('funkin'), 12);
+		etaTxt.y = FlxG.height - etaTxt.height - 22;
+        add(etaTxt);
 
         bar = new FlxSprite(0, FlxG.height - 20);
         bar.makeGraphic(1, 20, 0xFFFFFFFF);
@@ -34,15 +43,13 @@ class PreloadState extends MusicBeatState {
 		var future = preload(files);
 
         future.onComplete((message) -> {
-            progressTxt.text = 'Progress: 100% (Loaded)';
+            progressTxt.text = 'Progress: 100%';
             bar.scale.x = FlxG.width;
             bar.updateHitbox();
 
-            FlxTween.tween(FlxG.camera, {alpha: 0}, 2, { 
-                startDelay: 1, 
-                ease: FlxEase.cubeIn,
-                onComplete: _ -> FlxG.switchState(new funkin.game.PlayState())
-            });
+            etaTxt.text = 'ETA: Loaded';
+
+            new FlxTimer().start(0.5, tmr -> FlxG.camera.fade(0xFF000000, 3, false, () -> FlxG.switchState(new funkin.game.PlayState())));
         });
 
         future.onProgress((loaded, total) -> {
@@ -51,6 +58,9 @@ class PreloadState extends MusicBeatState {
             progressTxt.text = 'Progress: ${FlxMath.roundDecimal(percent, 2) * 100}%';
             bar.scale.x = FlxG.width * percent;
             bar.updateHitbox();
+
+            if (loaded >= total / 6) // when results are more accurate
+                etaTxt.text = 'ETA: ${int(eta)}s left';
 
             loadedTxt.text = files[loaded] + '\n' + loadedTxt.text;
         });
@@ -61,10 +71,22 @@ class PreloadState extends MusicBeatState {
 
         if (files.length > 0) {
 	        var progress = 0, total = files.length-1;
-	        var timer = new Timer(total * 5);
+	        var timer = new Timer(1); // 1ms delay per run
+
+            // ETA
+            var startTime = Timer.stamp();
+            var lastTime = startTime;
+
 	        timer.run = () -> {
-                trace(files[progress]);
+				final now = Timer.stamp();
+				final elapsed = now - lastTime;
+				lastTime = now;
+
                 PrecacheUtil.precache(files[progress]);
+
+				final avgTime = (now - startTime) / progress;
+				final remaining = total - progress;
+				eta = remaining * avgTime;
 
 	            promise.progress(progress, total);
 	            progress++;

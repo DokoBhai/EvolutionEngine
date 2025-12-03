@@ -95,7 +95,7 @@ class PrecacheUtil
 		if (cached != null) 
 			__cache.set(path, cached);
 		
-		trace('attempted to cache asset: $path (${cached != null ? 'success' : 'failed'} | $precacheType)');
+		//trace('attempted to cache asset: $path (${cached != null ? 'success' : 'failed'} | $precacheType)');
 
 		return cached;
 	}

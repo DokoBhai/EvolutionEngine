@@ -45,29 +45,34 @@ enum ChartEngineType
 @:access(funkin.game.system.SongData)
 @:access(funkin.game.Stage)
 @:publicFields class Parser {
-	static function chart(content:String, ?from:ChartEngineType = EVOLUTION, ?to:ChartEngineType = EVOLUTION):Dynamic {
+	static function chart(path:String, ?from:ChartEngineType = EVOLUTION, ?to:ChartEngineType = EVOLUTION):Dynamic {
+		var unsafeJson:Dynamic;
+		if (FileUtil.exists(path))
+			unsafeJson = PrecacheUtil.data(path);
+		else
+			unsafeJson = TJSON.parse(path); // assuming the `path` was actually the json's content
+
 		switch (to) {
 			case EVOLUTION:
 				switch (from) {
 					case EVOLUTION:
-						var data:Song = TJSON.parse(content);
+						var data:Song = unsafeJson;
 						return data;
 					case CODENAME:
 						// wip
 						return {};
 					case PSYCH:
-						var unsafeJson:Dynamic = TJSON.parse(content);
 						var chartJson:PsychSong;
-						if (unsafeJson.song != null && !(unsafeJson.song is String)) { // check for legacy
-							return chart(content, PSYCH_LEGACY);
+						if (Reflect.hasField(unsafeJson, 'song') && !(unsafeJson.song is String)) { // check for legacy
+							return chart(path, PSYCH_LEGACY);
 						} else
 							chartJson = cast unsafeJson;
 
 						var data:PsychSong = chartJson;
 						var characters:Array<Player> = [
-							{ name: data.player2,   isPlayer: false, isBopper: false, hideStrumline: false }, // dad
-							{ name: data.player1,   isPlayer: true,  isBopper: false, hideStrumline: false }, // bf
-							{ name: data.gfVersion, isPlayer: false, isBopper: true,  hideStrumline: true  }  // gf
+							{ name: data?.player2   ?? 'dad', isPlayer: false, isBopper: false, hideStrumline: false }, // dad
+							{ name: data?.player1   ?? 'bf',  isPlayer: true,  isBopper: false, hideStrumline: false }, // bf
+							{ name: data?.gfVersion ?? 'gf',  isPlayer: false, isBopper: true,  hideStrumline: true  }  // gf
 						];
 
 						var events:Array<ChartEventGroup> = [];
@@ -196,7 +201,7 @@ enum ChartEngineType
 						};
 						return returnData;
 					case PSYCH_LEGACY:
-						var data:PsychSong = TJSON.parse(content).song;
+						var data:PsychSong = unsafeJson.song;
 						if (Reflect.hasField(data, 'notes')) {
 							for (section in data.notes) {
 								if (section.sectionNotes != null && section.sectionNotes?.length ?? 0 > 0 && section.mustHitSection) {
@@ -223,7 +228,7 @@ enum ChartEngineType
 				// wip
 				return null;
 			case PSYCH_LEGACY:
-				return chart(content, from, PSYCH);
+				return chart(path, from, PSYCH);
 			case VSLICE:
 				// wip
 				return null;
