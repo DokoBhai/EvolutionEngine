@@ -8,16 +8,19 @@ import openfl.media.Sound;
 import openfl.utils.Assets as OpenFLAssets;
 #end
 
+import lime.app.Promise;
+import lime.app.Future;
+#if sys
+import sys.thread.Thread;
+#end
+
 @:publicFields class FunkinUtil
 {
 	static inline function getLerpRatio(ratio:Float, ?elapsed:Float)
 		return 1.0 - Math.pow(1.0 - ratio, (elapsed ?? FlxG.elapsed) * 60);
 
 	static inline function loadSparrowAtlas(path:String, ?showError:Bool)
-	{
-		var graphic = FlxGraphic.fromAssetKey(Paths.image(path, showError));
-		return FlxAtlasFrames.fromSparrow(graphic, Paths.sparrow(path, showError));
-	}
+		return FlxAtlasFrames.fromSparrow(PrecacheUtil.image(path), Paths.sparrow(path, showError));
 
 	/*
 		Tries and load animated frames if there is an XML detected,
@@ -31,13 +34,8 @@ import openfl.utils.Assets as OpenFLAssets;
 			sprite.loadGraphic(Paths.image(path, showError));
 	}
 
-	static inline function loadSound(path:String)
-	{
-		#if web
-		return OpenFLAssets.getSound(path);
-		#else
-		return Sound.fromFile(path);
-		#end
+	static inline function loadSound(path:String, ?reload:Bool = false) {
+		return PrecacheUtil.sound(path, reload);
 	}
 
 	static inline function fromRGBArray(rgb:Array<Int>)
@@ -76,6 +74,19 @@ import openfl.utils.Assets as OpenFLAssets;
 			return list[list.length - 1];
 
 		return null;
+	}
+
+	static function async<T>(f:Void->T):Future<T> {
+		#if sys
+		var promise = new Promise<T>();
+		Thread.create(() -> {
+			final result = f();
+			promise.complete(result); 
+		});
+		return promise.future;
+		#else
+		return f();
+		#end
 	}
 
 	static function startsWithAny(str:String, starts:Array<String>)

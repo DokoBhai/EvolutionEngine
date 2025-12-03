@@ -25,6 +25,12 @@ enum BeatType
 	MEASURE;
 }
 
+typedef CharacterChangeData =
+{
+	character:Character,
+	initialCharacter:String
+}
+
 @:access(funkin.game.system.SongData)
 @:access(funkin.game.Stage)
 @:access(funkin.game.objects.HUD)
@@ -193,24 +199,54 @@ class PlayState extends ScriptableState
 		call('createPost');
 
 		// remove in final builds
-		startSong(); 
+		startSong();
 	}
 
 	public var events:Array<ChartEventGroup> = [];
 	function loadEvents() {
 		final songEvents = song?.chart?.events ?? null;
+		var characterChanges:Array<CharacterChangeData> = [];
+		
+		function changesExists(character:Character) {
+			for (change in characterChanges) {
+				if (change.character == character) {
+					trace('Changes lol!');
+					return true;
+				}
+			}
+			return false;
+		} 
+
 		if (songEvents != null) {
 			for (eventGroup in songEvents) {
 				for (ev in eventGroup.events) {
 					var scrEvent = new EventLoadEvent(eventGroup.strumTime, ev);
 					call('onEventLoad', [scrEvent]);
 
-					if (scrEvent.cancelled) 
+					if (scrEvent.cancelled)
 						eventGroup.events.remove(ev);
+					else {
+						switch(ev.event) {
+							/* // this lags A LOT, so commenting this for now.
+							case 'Change Character': // character preloading
+								final character = characterFromID(ev.values[0]);
+								if (!changesExists(character))
+									characterChanges.push({ character: character, initialCharacter: character.name });
+
+								character.loadCharacter(ev.values[1]);
+							*/
+						}
+					}
 				}
 				events.push(eventGroup);
 			}
 		}
+
+		for (change in characterChanges) {
+			final char = change.character;
+			//char.loadCharacter(change.initialCharacter);
+		}
+
 		events.sort(HUD.sortByTime);
 		call('onEventsLoaded', []);
 	}

@@ -115,7 +115,6 @@ enum ChartEngineType
 								events.push(eventGroup);
 							}
 						}
-						trace('--');
 
 						function pushEvent(strumTime:Float, event:String, values:Array<Dynamic>):ChartEventGroup {
 							for (eventGroup in events) {
@@ -181,8 +180,6 @@ enum ChartEngineType
 								}
 							}
 						}
-						trace('**');
-						trace('##');
 
 						var returnData:Song = {
 							characters: characters,
@@ -235,21 +232,21 @@ enum ChartEngineType
 		}
 	}
 
-	static function character(content:String, ?from:EngineType = EVOLUTION, ?to:EngineType = EVOLUTION):Dynamic
+	static function character(path:String, ?from:EngineType = EVOLUTION, ?to:EngineType = EVOLUTION, ?reload:Bool = false):Dynamic
 	{
-		switch (to)
-		{
+		var unsafeJson:Dynamic = PrecacheUtil.data(path, reload);
+		switch (to) {
 			case EVOLUTION:
 				switch (from)
 				{
 					case EVOLUTION:
-						var data = TJSON.parse(content);
+						var data = unsafeJson;
 						return data;
 					case CODENAME:
 						// wip
 						return {};
 					case PSYCH:
-						var data:PsychCharacter = TJSON.parse(content);
+						var data:PsychCharacter = unsafeJson;
 						var animations:Array<AnimationData> = [];
 						for (animData in data.animations)
 						{
@@ -324,9 +321,10 @@ enum ChartEngineType
 		final jsonContent = haxe.Json.stringify(content, '\t');
 		try
 		{
-			if (Paths.exists('$path.json', absolute))
+			if (Paths.exists('$path.json', absolute)) {
 				FileUtil.saveContent(Paths.getPath('$path.json'), jsonContent);
-			else
+				PrecacheUtil.data(Paths.getPath('$path.json'), true);
+		 	} else
 				throw 'saveJson: Path "$path.json" doesn\'t exist!';
 		}
 		catch (e)

@@ -26,6 +26,7 @@ import Std.*; //This guy.... 🥀 -TBar
 
 // utils
 using StringTools;
+using utils.MapUtil;
 using flixel.util.FlxStringUtil;
 
 // interfaces
@@ -37,6 +38,7 @@ import funkin.backend.system.Paths;
 import funkin.backend.system.Conductor;
 
 // utils
+import funkin.backend.utils.PrecacheUtil;
 import funkin.backend.utils.FunkinUtil.*;
 import funkin.backend.utils.FileUtil;
 #end

@@ -8,6 +8,9 @@ import funkin.backend.system.Mods;
 	inline static function image(key:String, ?showError:Bool):String
 		return getPath('images/$key.${Flags.IMAGE_EXT}', null, null, null, showError);
 
+	inline static function font(key:String, ?showError:Bool):String
+		return getPath('fonts/$key', false, Flags.FONT_EXT, null, showError);
+
 	inline static function xml(key:String, ?showError:Bool):String
 		return getPath('$key.xml', null, null, null, showError);
 

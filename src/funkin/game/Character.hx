@@ -153,8 +153,8 @@ class Character extends FlxSprite implements IBeatListener {
 		{
 			name = charName;
 
-			var data = Parser.character(FileUtil.getContent(sourceData), charEngine);
-			trace('Loaded Character from: ${[sourceData]}');
+			var data = Parser.character(sourceData, charEngine);
+			trace('Loaded Character from: $sourceData');
 
 			if (data == null)
 				return false;
@@ -194,9 +194,6 @@ class Character extends FlxSprite implements IBeatListener {
 		for (anim in data.animations)
 		{
 			if (anim.indices != null && anim.indices?.length ?? 0 > 0) {
-				trace('loaded indices: ${anim.indices} for character $name');
-				trace('indices handled: $anim');
-				trace('---');
 				animation.addByIndices(anim.animName, anim.prefix, anim.indices, '', anim.frameRate, anim.looped, data.flipped);
 			} else
 				animation.addByPrefix(anim.animName, anim.prefix, anim.frameRate, anim.looped, data.flipped);
@@ -263,7 +260,7 @@ class Character extends FlxSprite implements IBeatListener {
 
 		holdTime += elapsed;
 
-		if (specialAnim && animation.curAnim.finished)
+		if (specialAnim && animation?.curAnim.finished ?? true)
 			specialAnim = false;
 	}
 

@@ -6,6 +6,7 @@ package funkin.backend;
 	static var SOUND_EXT:String = #if web 'mp3' #else 'ogg' #end;
 	static var MUSIC_EXT:String = #if web 'mp3' #else 'ogg' #end;
 	static var VIDEO_EXT:String = 'mp4';
+	static var FONT_EXT:Array<String> = ['ttf', 'otf'];
 	static var CHAR_EXT:Array<String> = ['json', 'xml'];
 	static var CHART_EXT:Array<String> = ['json', 'fnfc'];
 	static var LUA_EXT:Array<String> = ['lua'];
