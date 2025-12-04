@@ -79,6 +79,7 @@ class PlayState extends ScriptableState
 	public var songPath(get, never):String;
 	public var syncThreshold:Float = 25; // in ms
 	
+	// TEMPORARY
 	public var pressLeEnter:FlxText;
 	
 	public var scrollSpeed:Float = 1;
@@ -107,7 +108,7 @@ class PlayState extends ScriptableState
 		return isPixelStage = value;
 
 	override function create() {
-		final songToLoad = 'say-my-name';
+		final songToLoad = 'unknown-suffering';
 		loadSong(songToLoad, getMedianDifficulty(songToLoad));
 
 		if (songPath != null && Paths.exists('songs/$songPath/scripts'))
@@ -219,7 +220,7 @@ class PlayState extends ScriptableState
 
 		call('createPost');
 
-
+		// TEMPORARY
 		pressLeEnter = new FlxText(0, 0, 0);
 		pressLeEnter.camera = camHUD;
 		pressLeEnter.setFormat(Paths.font('funkin'), 26, -1, CENTER, OUTLINE, 0xFF000000);
@@ -256,14 +257,16 @@ class PlayState extends ScriptableState
 						eventGroup.events.remove(ev);
 					else {
 						switch(ev.event) {
-							/* // this lags A LOT, so commenting this for now.
 							case 'Change Character': // character preloading
 								final character = characterFromID(ev.values[0]);
 								if (!changesExists(character))
 									characterChanges.push({ character: character, initialCharacter: character.name });
 
 								character.loadCharacter(ev.values[1]);
-							*/
+								var precachedCharacter = character.clone();
+								precachedCharacter.alpha = 0.001;
+								insert(members.indexOf(character), precachedCharacter);
+								PrecacheUtil.precachedData.set('__character_data_${ev.values[1]}', precachedCharacter);
 						}
 					}
 				}
@@ -274,7 +277,7 @@ class PlayState extends ScriptableState
 
 		for (change in characterChanges) {
 			final char = change.character;
-			//char.loadCharacter(change.initialCharacter);
+			char.loadCharacter(change.initialCharacter);
 		}
 
 		events.sort(HUD.sortByTime);
@@ -338,8 +341,39 @@ class PlayState extends ScriptableState
 				case 'Move Camera':
 					focusCharacter(int(event.values[0]));
 				case 'Change Character':
-					final character = characterFromID(event.values[0]);
-					character.loadCharacter(event.values[1]);
+					for (i => char in characters) {
+						if (char.characterID == event.values[0]) {
+							final __lastChar = char;
+							final __precachedTag = '__character_data_${event.values[1]}';
+							char.kill();
+							characters[i] = PrecacheUtil.precachedData.get(__precachedTag);
+							PrecacheUtil.precachedData.remove(__precachedTag);
+							
+							char = characters[i];
+							remove(__lastChar);
+							char.setPosition(__lastChar.x, __lastChar.y);
+							char.alpha = __lastChar.alpha;
+							char.visible = __lastChar.visible;
+							char.playAnim(__lastChar.animation.curAnim.name);
+
+							for (note in hud.notes) {
+								if (note.character == __lastChar)
+									note.character = char;
+							}
+
+							for (note in hud.unspawnNotes) {
+								if (note.character == __lastChar)
+									note.character = char;
+							}
+
+							for (strumline in hud.strumlines) {
+								if (strumline.character == __lastChar)
+									Reflect.setProperty(strumline, 'character', char);
+							}
+
+							break;
+						}
+					}
 				case 'Play Animation':
 					final character = characterFromID(event.values[1]);	
 					character.playAnim(event.values[0], true);

@@ -1,5 +1,6 @@
 package funkin.game;
 
+import funkin.substates.LoadingSubstate;
 import flixel.util.FlxSort;
 import funkin.game.hud.Strumline;
 import funkin.game.hud.NoteGroup;
@@ -111,7 +112,8 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 	override function update(elapsed:Float) {
 		super.update(elapsed);
 		
-		updateNotes();
+		if (notes != null)
+			updateNotes();
 	}
 
 	public function beatHit(curBeat:Int):Void {}

@@ -10,11 +10,15 @@ import sys.FileSystem;
 
 class PreloadState extends MusicBeatState {
     var progressTxt:FlxText;
+    var bpsTxt:FlxText;
+	var loadedBytesTxt:FlxText;
     var loadedTxt:FlxText;
     var etaTxt:FlxText;
     var bar:FlxSprite;
 
     var eta:Float = 0;
+    var bytesLoaded:Int = 0;
+    var bytesPerSec:Float = 0;
     
     override function create() {
         super.create();
@@ -35,15 +39,28 @@ class PreloadState extends MusicBeatState {
 		etaTxt.y = FlxG.height - etaTxt.height - 22;
         add(etaTxt);
 
+		bpsTxt = new FlxText(-5, -5, FlxG.width, '0B/s');
+		bpsTxt.setFormat(Paths.font('funkin'), 24, -1, RIGHT);
+		bpsTxt.y = FlxG.height - bpsTxt.height - 37.5;
+		//add(bpsTxt);
+
+		loadedBytesTxt = new FlxText(-5, -5, FlxG.width, '0B / 0B');
+		loadedBytesTxt.setFormat(Paths.font('funkin'), 12, -1, RIGHT);
+		loadedBytesTxt.y = FlxG.height - loadedBytesTxt.height - 22;
+		add(loadedBytesTxt);
+
         bar = new FlxSprite(0, FlxG.height - 20);
         bar.makeGraphic(1, 20, 0xFFFFFFFF);
         add(bar);
 
-		final files = getFiles('assets', path -> return path.endsWith('.png') || path.endsWith('.json') || path.endsWith('.xml'));
+		final filter:String->Bool = path -> return path.endsWith('.png') || path.endsWith('.json') || path.endsWith('.xml');
+        final fileSize:Int = getDirectorySize('assets', filter);
+		final files = getFiles('assets', filter);
 		var future = preload(files);
 
         future.onComplete((message) -> {
             progressTxt.text = 'Progress: 100%';
+			bpsTxt.text = '0B/s';
             bar.scale.x = FlxG.width;
             bar.updateHitbox();
 
@@ -56,12 +73,14 @@ class PreloadState extends MusicBeatState {
             final percent = loaded / total;
 
             progressTxt.text = 'Progress: ${FlxMath.roundDecimal(percent, 2) * 100}%';
+			bpsTxt.text = '${bytesPerSec.formatBytes()}/s';
             bar.scale.x = FlxG.width * percent;
             bar.updateHitbox();
 
             if (loaded >= total / 6) // when results are more accurate
                 etaTxt.text = 'ETA: ${int(eta)}s left';
 
+            loadedBytesTxt.text = '${bytesLoaded.formatBytes()} / ${fileSize.formatBytes()}';
             loadedTxt.text = files[loaded] + '\n' + loadedTxt.text;
         });
     }
@@ -83,6 +102,9 @@ class PreloadState extends MusicBeatState {
 				lastTime = now;
 
                 PrecacheUtil.precache(files[progress]);
+
+				final fileSize = FileSystem.stat(files[progress]).size;
+                bytesLoaded += fileSize;
 
 				final avgTime = (now - startTime) / progress;
 				final remaining = total - progress;
@@ -129,5 +151,23 @@ class PreloadState extends MusicBeatState {
 		}
 		trace('ERROR: File $folder is not a directory.');
 		return [];
+    }
+
+    function getDirectorySize(folder:String, ?filter:String->Bool):Int {
+        if (!FileUtil.exists(folder)) {
+            trace('ERROR: File "$folder" does not exist.');
+            return 0;
+        }
+
+		var size:Int = 0;
+        if (FileSystem.isDirectory(folder)) {
+            final content = getFiles(folder, filter);
+            for (file in content)
+                size += FileSystem.stat(file).size;
+
+            return size;
+        }
+        trace('ERROR: File "$folder" is not a directory.');
+        return 0;
     }
 }

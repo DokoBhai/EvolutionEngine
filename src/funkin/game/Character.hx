@@ -263,6 +263,25 @@ class Character extends FlxSprite implements IBeatListener {
 			specialAnim = false;
 	}
 
+	override function clone() {
+		var character = new Character(x, y, name, isPlayer);
+		character.antialiasing = antialiasing;
+		character.alpha = alpha;
+		character.visible = visible;
+		character.alive = alive;
+		character.exists = exists;
+		character.clipRect = clipRect;
+		character.isBopper = isBopper;
+		character.hideStrumline = hideStrumline;
+		character.allowSing = allowSing;
+		character.stunned = stunned;
+		character.danceBeatInterval = danceBeatInterval;
+		character.specialAnim = specialAnim;
+		character.characterID = characterID;
+		
+		return character;
+	}
+
 	override function draw() {
 		super.draw();
 		if (warn != null)
