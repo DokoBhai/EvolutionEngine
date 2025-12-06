@@ -2,6 +2,7 @@ package funkin.backend.utils;
 
 import flixel.graphics.FlxGraphic;
 
+import openfl.system.System;
 import openfl.media.Sound;
 import openfl.display.BitmapData;
 
@@ -22,30 +23,6 @@ enum PrecacheType
 
 class PrecacheUtil
 {
-	/**
-	 * a Map of precached `BitmapData`s. 
-	 * The keys has the `String` path to the corresponding BitmapData file.
-	 */
-	public static var precachedBitmaps:Map<String, BitmapData> = [];
-
-	/*
-	 * a Map of precached sounds. This is precached from a sound file like `.ogg`.
-	 * The keys has the `String` path to the corresponding sound file.
-	 */
-	public static var precachedSounds:Map<String, Sound> = [];
-
-	/*
-	 * a Map of precached datas. This is precached from a JSON or an XML.
-	 * The keys has the `String` path to the corresponding data file.
-	 */
-	public static var precachedData:Map<String, Dynamic> = [];
-
-	/*
-	 * a Map of precached contents. This is precached from a text file.
-	 * The keys has the `String` path to the corresponding BitmapData's file.
-	 */
-	public static var precachedContents:Map<String, String> = [];
-
 	/*
 	 * a Map of the current cache.
 	 * Basically all the precached assets are in here.
@@ -66,28 +43,24 @@ class PrecacheUtil
 		var cached:Dynamic;
 		switch (precacheType) {
 			case BITMAP:
-				final graphic = FlxGraphic.fromAssetKey(path);
-				if (graphic != null) {
-					final bitmap = graphic.bitmap.clone();
-					precachedBitmaps.set(path, bitmap);
-					cached = bitmap;
-				} else cached = null;
+				try {
+					var bmp:BitmapData = BitmapData.fromFile(path);
+					cached = bmp;
+				} catch(e:Dynamic) {
+					cached = null;
+				}
 			case SOUND:
 				#if web
 				cached = OpenFLAssets.getSound(path);
 				#else
 				cached = Sound.fromFile(path);
 				#end
-				precachedSounds.set(path, cached);
 			case DATA:
 				if (path.endsWith('.json')) cached = TJSON.parse(FileUtil.getContent(path)); 
 				else if (path.endsWith('.xml')) cached = Xml.parse(FileUtil.getContent(path)); 
 				else cached = null;
-
-				if (cached != null) precachedData.set(path, cached);
 			case CONTENT:
 				cached = FileUtil.getContent(path);
-				precachedContents.set(path, cached);
 			default:
 				cached = null;
 		}
@@ -133,7 +106,7 @@ class PrecacheUtil
 	public static function directory(dir:String, ?recurse:Bool = false, ?reload:Bool = false, ?filter:String->Bool):Map<String, Dynamic>
 	{
 		if (dir.endsWith('/') || dir.endsWith('\\'))
-			dir.substr(0, dir.length - 1);
+			dir = dir.substr(0, dir.length - 1);
 
 		filter ??= _ -> true;
 
@@ -185,4 +158,28 @@ class PrecacheUtil
 
 	public static inline function content(path:String, ?reload:Bool = false)
 		return precache(path, reload, CONTENT);
+
+
+	/**
+		Assets that are in the array are excluded to be cleared when `clear()` is called.
+	**/
+	public var excludedAssets = [];
+
+	/**
+		Clears the cache
+	**/
+	public static inline function clear(?exclusion:Array<String>) {
+		exclusion ??= [];
+
+		for (path => asset in __cache) {
+			if (exclusion.contains(path))
+				continue;
+
+			if (asset is BitmapData) (cast asset : BitmapData).dispose();
+			if (asset is Sound) (cast asset : Sound).close();
+			__cache.remove(path);
+		}
+
+		System.gc();
+	}
 }

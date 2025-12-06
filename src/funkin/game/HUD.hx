@@ -92,9 +92,9 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 		for (note in unspawnNotes) {
 			if (Conductor.songPosition + game.spawnTime >= note.strumTime) {
 				unspawnNotes.remove(note);
-				
+
 				var leNote = NoteGroup.recycleNote(note.noteData, false, note.character, null, PlayState.isPixelStage);
-				leNote.y += FlxG.height * camera.zoom;
+				leNote.y = FlxG.height * camera.zoom;
 				leNote.strumTime = note.strumTime;
 
 				final strumline = strumlines[note.character];
