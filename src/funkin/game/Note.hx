@@ -29,8 +29,12 @@ class Note extends FunkinSprite
 {
 	// used for animations
 	public static var colorArray:Array<String> = ['purple', 'blue', 'green', 'red'];
+	public static var DEFAULT_PIXEL_META(get, never):PixelNoteAnimation;
 	public static var NOTE_SIZE:Int = 112;
 	public static var FALLBACK_TEXTURE:String = 'NOTE_assets';
+
+	static inline function get_DEFAULT_PIXEL_META()
+		return new PixelNoteAnimation(17, 17);
 
 	public var strumTime:Float = 0;
 	public var noteData:Int = 0;
@@ -61,7 +65,8 @@ class Note extends FunkinSprite
 	public var multSpeed:Float = 1;
 	public var angleOffset:Float = 0;
 
-	public var texture(default, set):String = FALLBACK_TEXTURE;
+	public var texture(default, set):String;
+	public var forcedTextureReload:Bool = false;
 
 	function get_cpu()
 		return strum?.cpu ?? false;
@@ -71,6 +76,7 @@ class Note extends FunkinSprite
 
 	function set_texture(path:String)
 	{
+		final __prevTexture = texture;
 		if (path.startsWith('noteskins/'))
 			path.replace('noteskins/', '');
 
@@ -81,11 +87,13 @@ class Note extends FunkinSprite
 			trace('set_texture: Texture with path "images/noteskins/$path" not found!');
 
 		texture ??= FALLBACK_TEXTURE;
-		if (isPixel)
-			loadGraphic(Paths.image('noteskins/$texture', false), true, pixelMeta.frameWidth, pixelMeta.frameHeight);
-		else
-			tryLoadFrames(this, 'noteskins/$texture', false);
-
+		if (texture != __prevTexture || forcedTextureReload) {
+			forcedTextureReload = false;
+			if (isPixel)
+				loadGraphic(Paths.image('noteskins/$texture', false), true, pixelMeta.frameWidth, pixelMeta.frameHeight);
+			else
+				tryLoadFrames(this, 'noteskins/$texture', false);
+		}
 		return texture;
 	}
 
@@ -152,6 +160,33 @@ class Note extends FunkinSprite
 		this.texture = texture ?? FALLBACK_TEXTURE;
 
 		reloadNote();
+	}
+
+	public function loadDefaultPixelMeta() {
+		pixelMeta = DEFAULT_PIXEL_META;
+		pixelMeta.set_frameWidth = function(value:Int)
+		{
+			pixelMeta.frameWidth = value;
+			if (isPixel)
+			{
+				this.texture = this.texture; // reload tex
+				loadAnimations(noteData);
+			}
+
+			return value;
+		}
+
+		pixelMeta.set_frameHeight = function(value:Int)
+		{
+			pixelMeta.frameHeight = value;
+			if (isPixel)
+			{
+				this.texture = this.texture; // reload tex
+				loadAnimations(noteData);
+			}
+
+			return value;
+		}
 	}
 
 	function reloadNote() {

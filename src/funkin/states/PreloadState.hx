@@ -66,6 +66,9 @@ class PreloadState extends MusicBeatState {
 
             etaTxt.text = 'ETA: Loaded';
 
+            
+            
+
             new FlxTimer().start(0.5, tmr -> FlxG.camera.fade(0xFF000000, 3, false, () -> FlxG.switchState(new funkin.game.PlayState())));
         });
 

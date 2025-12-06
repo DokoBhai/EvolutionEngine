@@ -361,11 +361,6 @@ class PlayState extends ScriptableState
 									note.character = char;
 							}
 
-							for (note in hud.unspawnNotes) {
-								if (note.character == __lastChar)
-									note.character = char;
-							}
-
 							for (strumline in hud.strumlines) {
 								if (strumline.character == __lastChar)
 									Reflect.setProperty(strumline, 'character', char);
