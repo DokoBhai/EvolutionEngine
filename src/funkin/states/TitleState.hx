@@ -32,6 +32,8 @@ class TitleState extends MusicBeatState
                 introText.text = "Uhh...";
             case 4:
                 introText.text = "End this demo pls";
+            case 5:
+                FlxG.switchState(new PlayState());
         }
 
     }
