@@ -1,24 +1,20 @@
 package funkin.game;
 
 import flixel.FlxObject;
-import flixel.text.FlxText.FlxTextFormatMarkerPair;
-
-import funkin.game.*;
-import funkin.game.system.*;
-import funkin.game.system.SongData.ChartEventGroup;
-import funkin.game.system.SongData.ChartEvent;
-import funkin.game.system.SongData.Player;
-
-import funkin.game.hud.StrumGroup;
-
 import flixel.math.FlxPoint;
-
+import flixel.text.FlxText.FlxTextFormatMarkerPair;
+import funkin.backend.scripting.events.*;
+import funkin.backend.scripting.events.game.*;
+import funkin.game.*;
+import funkin.game.hud.StrumGroup;
+import funkin.game.system.*;
+import funkin.game.system.SongData.ChartEvent;
+import funkin.game.system.SongData.ChartEventGroup;
+import funkin.game.system.SongData.Player;
 #if sys
 import sys.FileSystem;
 #end
 
-import funkin.backend.scripting.events.*;
-import funkin.backend.scripting.events.game.*;
 
 enum BeatType
 {
@@ -297,15 +293,20 @@ class PlayState extends ScriptableState
 		}
 
 		// this is obv wip, im js lazy rn
-		for (key in ['A', 'S', 'UP', 'RIGHT']) {
-			final pressed = Reflect.getProperty(FlxG.keys.pressed, key);
-			final justPressed = Reflect.getProperty(FlxG.keys.justPressed, key);
-			final justReleased = Reflect.getProperty(FlxG.keys.justReleased, key);
-
-			if (pressed) keyPressed(key);
-			if (justPressed) keyJustPressed(key);
-			if (justReleased) keyJustReleased(key);
-		}
+		if (FlxG.keys.pressed.LEFT) keyPressed('LEFT');
+		if (FlxG.keys.pressed.DOWN) keyPressed('DOWN');
+		if (FlxG.keys.pressed.UP) keyPressed('UP');
+		if (FlxG.keys.pressed.RIGHT) keyPressed('RIGHT');
+		
+		if (FlxG.keys.justPressed.LEFT) keyJustPressed('LEFT');
+		if (FlxG.keys.justPressed.DOWN) keyJustPressed('DOWN');
+		if (FlxG.keys.justPressed.UP) keyJustPressed('UP');
+		if (FlxG.keys.justPressed.RIGHT) keyJustPressed('RIGHT');
+		
+		if (FlxG.keys.justReleased.LEFT) keyJustReleased('LEFT');
+		if (FlxG.keys.justReleased.DOWN) keyJustReleased('DOWN');
+		if (FlxG.keys.justReleased.UP) keyJustReleased('UP');
+		if (FlxG.keys.justReleased.RIGHT) keyJustReleased('RIGHT');
 
 		if (FlxG.keys.justPressed.ENTER && allowStart) {
 			allowStart = false;
@@ -399,7 +400,7 @@ class PlayState extends ScriptableState
 	function keyPressed(key:String) {
 		call('keyPressed', [key]);
 
-		final index = (['A', 'S', 'UP', 'RIGHT']).indexOf(key);
+		final index = (['LEFT', 'DOWN', 'UP', 'RIGHT']).indexOf(key);
 		for (strumline in hud.strumlines) {
 			if (!strumline.cpu) {
 				final strum = strumline.members[index];
@@ -414,7 +415,7 @@ class PlayState extends ScriptableState
 	function keyJustPressed(key:String) {
 		call('keyJustPressed', [key]);
 
-		final index = (['A', 'S', 'UP', 'RIGHT']).indexOf(key);
+		final index = (['LEFT', 'DOWN', 'UP', 'RIGHT']).indexOf(key);
 		for (note in hud.notes) {
 			if (note.noteData == index && !note.strum.cpu) {
 				if (note.canBeHit) {
@@ -428,7 +429,7 @@ class PlayState extends ScriptableState
 	function keyJustReleased(key:String) {
 		call('keyJustReleased', [key]);
 
-		final index = (['A', 'S', 'UP', 'RIGHT']).indexOf(key);
+		final index = (['LEFT', 'DOWN', 'UP', 'RIGHT']).indexOf(key);
 		for (strumline in hud.strumlines) {
 			if (!strumline.cpu) {
 				final strum = strumline.members[index];
