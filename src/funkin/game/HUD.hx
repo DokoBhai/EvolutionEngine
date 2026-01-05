@@ -1,11 +1,15 @@
 package funkin.game;
 
-import funkin.substates.LoadingSubstate;
+import flixel.math.FlxPoint;
+import flixel.FlxObject;
+import flixel.ui.FlxBar;
 import flixel.util.FlxSort;
-import funkin.game.hud.Strumline;
 import funkin.game.hud.NoteGroup;
-import funkin.game.system.SongData;
+import funkin.game.hud.Strumline;
+import funkin.game.hud.HealthIcon;
 import funkin.game.system.SongData.Song;
+import funkin.game.system.SongData;
+import funkin.substates.LoadingSubstate;
 
 @:access(funkin.game.hud.NoteGroup)
 class HUD extends FlxSpriteGroup implements IBeatListener {
@@ -25,9 +29,50 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 		onNoteDestroyed = new FlxTypedSignal();
 	}
 
+	/* Health Bar & Icons */
+
+	var healthBar:FlxBar;
+	var iconP1:HealthIcon;
+	var iconP2:HealthIcon;
+	var iconXGap:Float = -20;
+	public function loadHealthBar(playerIcon:String, opponentIcon:String) {
+		healthBar = new FlxBar(0, 0, RIGHT_TO_LEFT, int(FlxG.width / 2), 15, game, "health", 0, 2, true);
+		healthBar.screenCenter(X);
+		healthBar.y = FlxG.height - healthBar.height - 60;
+		healthBar.createFilledBar(FlxColor.RED, FlxColor.LIME, true, FlxColor.BLACK);
+		healthBar.numDivisions = 1000;
+		add(healthBar);
+
+		iconP1 = new HealthIcon(0, 0, playerIcon, true);
+		iconP1.followObject = true;
+		iconP1.trackerOffset.x = iconXGap;
+		add(iconP1);
+
+		iconP2 = new HealthIcon(0, 0, opponentIcon, false);
+		iconP2.followObject = true;
+		iconP2.trackerOffset.x = -iconP2.width - iconXGap;
+		add(iconP2);
+	}
+
+	public dynamic function bopIcons(bopAmount:Float = 0.3, duration:Float = 0.5) {
+		iconP1.bop(bopAmount, duration);
+		iconP2.bop(bopAmount, duration);
+	}
+
+	public dynamic function updateHealthIcons() {
+		iconP1.posTracker.set(healthBar.x + (healthBar.width * (1 - (game.health / 2))), healthBar.y - (iconP1.height/2));
+		iconP2.posTracker.set(healthBar.x + (healthBar.width * (1 - (game.health / 2))), healthBar.y - (iconP2.height/2));
+
+		iconP1.state = (game.health > 0.2 ? NORMAL : LOSING);
+		iconP2.state = (game.health < 1.8 ? NORMAL : LOSING);
+	}
+
+	/* Strums & Notes */
+
 	public function loadStrums() {
 		var characters = game.characters.copy();
 		characters.reverse();
+
 		for (char in characters) {
 			var strumline = new Strumline(0, 50, 4, char.characterID, !char.isPlayer, null, PlayState.isPixelStage);
 			strumline.visible = !char.hideStrumline;
@@ -41,7 +86,6 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 			if (char.isPlayer)
 				strumline.x += FlxG.width/2;
 		}
-
 		characters.resize(0);
 	}
 
