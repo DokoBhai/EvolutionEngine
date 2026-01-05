@@ -1,0 +1,14 @@
+{
+	"name": "Week 1",
+	"tag": "week_1",
+	"difficulties": ["Normal"],
+	"songs": [
+		{"name": "Deceived", "icon": "icon-bf"},
+		{"name": "Say My Name", "icon": "icon-bf"},
+		{"name": "Unknown Suffering", "icon": "icon-bf"},
+		{"name": "Unknown Suffering REMIX", "icon": "icon-bf"}
+	],
+	"weekRequired": null,
+	"visibleInFreeplay": true,
+	"visibleInStoryMode": true
+}

@@ -154,4 +154,8 @@ class SongData
 		}
 		return UNKNOWN;
 	}
+
+	inline public static function resolveSongPath(name:String):String {
+		return StringTools.replace(name.toLowerCase(), " ", "-");
+	}
 }
