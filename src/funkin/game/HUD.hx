@@ -31,9 +31,9 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 
 	/* Health Bar & Icons */
 
-	var healthBar:FlxBar;
-	var iconP1:HealthIcon;
-	var iconP2:HealthIcon;
+	public var healthBar:FlxBar;
+	public var iconP1:HealthIcon;
+	public var iconP2:HealthIcon;
 	var iconXGap:Float = -20;
 	public function loadHealthBar(playerIcon:String, opponentIcon:String) {
 		healthBar = new FlxBar(0, 0, RIGHT_TO_LEFT, int(FlxG.width / 2), 15, game, "health", 0, 2, true);
@@ -65,6 +65,29 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 
 		iconP1.state = (game.health > 0.2 ? NORMAL : LOSING);
 		iconP2.state = (game.health < 1.8 ? NORMAL : LOSING);
+	}
+
+	/* Score Text */
+
+	public var scoreTxt:FlxText;
+	public var scoreFormat:String = 'Score: {0}  •  Misses: {1}  •  Accuracy: {2}%  •  {3}';
+	public function loadScoreText() {
+		scoreTxt = new FunkinText(0, healthBar.y + 25, FlxG.width, scoreFormat);
+		scoreTxt.setFormat(Paths.font('vcr'), 20, 0xFFFFFFFF, CENTER, OUTLINE, 0xFF000000);
+		add(scoreTxt);
+	}
+
+	public function updateScoreText() {
+		if (scoreTxt != null) {
+			final placeholders:Array<String> = [ 
+				string(game.songScore), string(game.songMisses), 
+				string(game.songAccuracy), 'N/A' 
+			];
+
+			scoreTxt.text = scoreFormat;
+			for (i => placeholder in placeholders)
+				scoreTxt.text = scoreTxt.text.replace('{$i}', placeholder);
+		}
 	}
 
 	/* Strums & Notes */
@@ -174,6 +197,8 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 		
 		if (notes != null)
 			updateNotes();
+
+		updateScoreText();
 	}
 
 	public function beatHit(curBeat:Int):Void {

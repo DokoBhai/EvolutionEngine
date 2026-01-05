@@ -6,6 +6,7 @@ class Rating {
     public var name:String;
     public var timing:Float;
     public var score:Int;
+    public var hits:Int;
 
     public function new(name:String, timing:Float, score:Int) {
         this.name = name;
@@ -33,4 +34,12 @@ class Rating {
 
     public static inline function judgeRating(strumTime:Float, hitTime:Float):String
         return judge(strumTime, hitTime)?.name ?? 'miss';
+
+    public static inline function getFromName(ratingName:String):Null<Rating> {
+        for (rating in ratings) {
+            if (rating.name == ratingName)
+                return rating;
+        }
+        return null;
+    }
 }

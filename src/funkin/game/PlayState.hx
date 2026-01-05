@@ -30,6 +30,17 @@ typedef CharacterChangeData = {
     previousCharacter:String
 }
 
+typedef CampaignData = {
+	score:Int,
+	misses:Int,
+	accuracy:Float,
+
+	sicks:Int,
+	goods:Int,
+	bads:Int,
+	shits:Int
+}
+
 class PlayState extends ScriptableState {
     // basic game objects
     public var stage:ScriptableStage;
@@ -78,6 +89,32 @@ class PlayState extends ScriptableState {
     public var opponentStrums:StrumGroup;
     public var scrollSpeed:Float = 1;
 
+	// scoring-related
+	public var songScore:Int = 0;
+	public var songMisses:Int = 0;
+	public var songAccuracy:Float = 0;
+	public var ratingName:String = 'N/A';
+	
+	public static var ratingList:Map<String, Float> = [
+		'X'  => 1,
+		'S+' => 0.99,
+		'S'  => 0.95,
+		'A'  => 0.9,
+		'B'  => 0.8,
+		'C'  => 0.65,
+		'D'  => 0.5,
+		'E'  => 0.55,
+		'F'  => 0.4
+	];
+
+	public static var weekPlaylist:Array<String> = [];
+	public static var weekDifficulty:String = '';
+	public static var defaultCampaignData:CampaignData = {
+		score: 0, misses: 0, accuracy: 0,
+		sicks: 0, goods: 0, bads: 0, shits: 0
+	}
+	public static var campaignData:CampaignData = copyStruct(defaultCampaignData);
+
     // song attributes
 	public var songName(get, never):String;
 	public var songPath(get, never):String;
@@ -86,9 +123,9 @@ class PlayState extends ScriptableState {
     public var syncThreshold:Float = 25; // in ms
 	public var health(default, set):Float = 1;
 	public function set_health(val:Float):Float {
-		health = val;
+		health = FlxMath.bound(val, 0, 2);
 		if(hud != null) hud.updateHealthIcons();
-		return val;
+		return health;
 	}
 
 	function get_songName() return song?.songName ?? '';
@@ -207,6 +244,8 @@ class PlayState extends ScriptableState {
 
 		hud.loadHealthBar("bf", "bf");
 		health = 1;
+
+		hud.loadScoreText();
 
 		if (GameplayModifiers.opponentMode) {
 			for (strumline in hud.strumlines)
@@ -535,10 +574,13 @@ class PlayState extends ScriptableState {
      * @param note The note to be hit.
      */
     public function hitNote(note:Note) {
-		final rating = Rating.judgeRating(note.strumTime, Conductor.songPosition);
-		note.rating = rating;
+		final rating = Rating.judge(note.strumTime, Conductor.songPosition);
+		if (rating == null) return;
+		
+		final ratingName = rating?.name ?? '';
+		note.rating = ratingName;
 
-		if (rating != 'miss') {
+		if (ratingName != 'miss') {
 			var event = new NoteEvent(note);
 			callHScript('noteHit', [event]);
 			if (note.strum.cpu) callHScript('cpuNoteHit', [event]);
@@ -546,7 +588,7 @@ class PlayState extends ScriptableState {
 
 			if (!event.cancelled) {
 				if (!note.missed && !note.hit && note.spawned) {
-					if (note.canBeHit) {
+					if (note.canBeHit) {						
 						note.hit = true;
 						note.strum.playAnim('confirm', true);
 
@@ -557,7 +599,13 @@ class PlayState extends ScriptableState {
 						hud.disposeNote(note);
 
 						if (!note.cpu) {
-							var ratingPop = Popup.recycle(300, 0, PrecacheUtil.image('gameplay/$rating'));
+							health += note.hitHealth ?? 0.023;
+							if (!note.isSustainNote) {
+								songScore += rating.score;
+								rating.hits++;
+							}
+
+							var ratingPop = Popup.recycle(300, 0, PrecacheUtil.image('gameplay/${ratingName}'));
 							ratingPop.scale.set(0.6, 0.6);
 							ratingPop.updateHitbox();
 							ratingPop.pop();
@@ -596,6 +644,15 @@ class PlayState extends ScriptableState {
 					'colorTransform.blueOffset': 255,
 					'colorTransform.greenOffset': 255
 				}, 0.2, { ease: FlxEase.cubeIn });
+
+				if (!note.cpu) {
+					health -= note.missHealth ?? 0.043;
+				
+					if (!note.isSustainNote) {
+						songScore -= 10;
+						songMisses++;
+					}
+				}
 			}
 		}
 	}

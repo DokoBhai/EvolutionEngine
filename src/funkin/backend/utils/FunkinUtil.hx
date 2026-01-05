@@ -40,6 +40,14 @@ import sys.thread.Thread;
 	static inline function fromRGBArray(rgb:Array<Int>)
 		return FlxColor.fromRGB(rgb[0], rgb[1], rgb[2]);
 
+	static inline function copyStruct<T>(struct:T):T {
+		var ret:Dynamic = {};
+		for (field in Reflect.fields(struct))
+			Reflect.setField(ret, field, Reflect.field(struct, field));
+
+		return cast ret;
+	}
+
 	static function attemptAddAnimationByPrefix(sprite:FlxSprite, animName:String, prefix:String, frameRate:Int, looped:Bool)
 	{
 		var success:Bool;

@@ -43,6 +43,9 @@ class Note extends FunkinSprite
 	public var noteType:String = '';
 	public var animSuffix:String = '';
 	public var isSustainNote:Bool = false;
+	public var hitHealth:Float = 0.023;
+	public var missHealth:Float = 0.043;
+	public var hitCausesMiss:Bool = false;
 
 	public var isPixel(default, set):Bool = false;
 	public var pixelMeta(default, set):PixelNoteAnimation;
