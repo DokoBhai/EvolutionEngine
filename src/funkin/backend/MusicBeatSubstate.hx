@@ -69,8 +69,7 @@ class MusicBeatSubstate extends FlxSubState implements IBeatListener
 	var __lastBeat:Int = -1;
 	var __lastMeasure:Int = -1;
 
-	override function update(elapsed:Float)
-	{
+	override function update(elapsed:Float) {
 		super.update(elapsed);
 
 		if (__lastStep != Conductor.curStep)

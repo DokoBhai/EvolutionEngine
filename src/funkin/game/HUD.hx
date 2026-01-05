@@ -26,9 +26,8 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 	}
 
 	public function loadStrums() {
-		var characters = game.characters;
+		var characters = game.characters.copy();
 		characters.reverse();
-
 		for (char in characters) {
 			var strumline = new Strumline(0, 50, 4, char.characterID, !char.isPlayer, null, PlayState.isPixelStage);
 			strumline.visible = !char.hideStrumline;
@@ -42,6 +41,8 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 			if (char.isPlayer)
 				strumline.x += FlxG.width/2;
 		}
+
+		characters.resize(0);
 	}
 
 	public function loadNotes() {

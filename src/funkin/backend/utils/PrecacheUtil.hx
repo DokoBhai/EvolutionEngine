@@ -137,29 +137,6 @@ class PrecacheUtil
 		return null;
 	}
 
-	/*
-		######################
-		#     SHORTCUTS      #
-		######################
-	*/
-
-	public static inline function bitmap(path:String, ?reload:Bool = false)
-		return precache(path, reload, BITMAP)?.clone() ?? null;
-
-	public static inline function image(path:String, ?reload:Bool = false) {
-		return precache(Paths.image(path), reload, BITMAP)?.clone() ?? null;
-	}
-
-	public static inline function sound(path:String, ?reload:Bool = false)
-		return precache(path, reload, SOUND);
-
-	public static inline function data(path:String, ?reload:Bool = false)
-		return precache(path, reload, DATA);
-
-	public static inline function content(path:String, ?reload:Bool = false)
-		return precache(path, reload, CONTENT);
-
-
 	/**
 		Assets that are in the array are excluded to be cleared when `clear()` is called.
 	**/
@@ -182,4 +159,25 @@ class PrecacheUtil
 
 		System.gc();
 	}
+
+	/*
+		######################
+		#     SHORTCUTS      #
+		######################
+	*/
+
+	public static inline function bitmap(path:String, ?reload:Bool = false)
+		return precache(path, reload, BITMAP)?.clone() ?? null;
+
+	public static inline function image(path:String, ?reload:Bool = false)
+		return precache(Paths.image(path), reload, BITMAP)?.clone() ?? null;
+
+	public static inline function sound(path:String, ?reload:Bool = false)
+		return precache(path, reload, SOUND);
+
+	public static inline function data(path:String, ?reload:Bool = false)
+		return precache(path, reload, DATA);
+
+	public static inline function content(path:String, ?reload:Bool = false)
+		return precache(path, reload, CONTENT);
 }

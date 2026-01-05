@@ -78,8 +78,6 @@ class MusicBeatState extends FlxState implements IBeatListener
 	}
 
 	public function stepHit(curStep:Int) {}
-
 	public function beatHit(curBeat:Int) {}
-
 	public function measureHit(curMeasure:Int) {}
 }
