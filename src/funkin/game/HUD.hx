@@ -7,11 +7,12 @@ import funkin.game.hud.NoteGroup;
 import funkin.game.system.SongData;
 import funkin.game.system.SongData.Song;
 
+@:access(funkin.game.hud.NoteGroup)
 class HUD extends FlxSpriteGroup implements IBeatListener {
 	public var strumlines:Array<Strumline> = [];
 	public var strums:Array<Strum> = [];
 	public var notes:NoteGroup;
-	public var unspawnNotes:Array<Note> = [];
+	public var unspawnNotes:Array<ChartNote> = [];
 	public var game:PlayState;
 
 	public var onNoteDestroyed:FlxTypedSignal<Note->Void>;
@@ -46,6 +47,10 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 	public function loadNotes() {
 		final song = PlayState.song;
 		for (i => note in song.chart.notes) {
+			unspawnNotes.push(note);
+			if (note.strumTime > game.spawnTime * 2) // other notes gets recycled
+				continue;
+
 			var leNote = new Note(note.noteData, false, note.character, null, PlayState.isPixelStage);
 			leNote.y += FlxG.height * camera.zoom;
 			leNote.strumTime = note.strumTime;
@@ -53,7 +58,6 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 			final strumline = strumlines[note.character];
 			leNote.strum = strumline.members[note.noteData];
 			strumline.notes.push(leNote);
-			unspawnNotes.push(leNote);
 
 			leNote.get_canBeHit = function()
 				return Math.abs(Conductor.songPosition - leNote.strumTime) <= 188;
@@ -88,8 +92,18 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 		for (note in unspawnNotes) {
 			if (Conductor.songPosition + game.spawnTime >= note.strumTime) {
 				unspawnNotes.remove(note);
-				notes.add(note);
-				note.spawned = true;
+
+				var leNote = NoteGroup.recycleNote(note.noteData, false, note.character, null, PlayState.isPixelStage);
+				leNote.y = FlxG.height * camera.zoom;
+				leNote.strumTime = note.strumTime;
+
+				final strumline = strumlines[note.character];
+				leNote.strum = strumline.members[note.noteData];
+				strumline.notes.push(leNote);
+
+				leNote.get_canBeHit = function() return Math.abs(Conductor.songPosition - leNote.strumTime) <= 188;
+				notes.add(leNote);
+				leNote.spawned = true;
 
 				notes.members.sort(sortByTime);
 			}
@@ -106,7 +120,8 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 		FlxTween.cancelTweensOf(note);
 		if (notes.members.contains(note))
 			notes.remove(note);
-		note.destroy();
+		note.kill();
+		NoteGroup.recyclable.push(note);
 	}
 
 	override function update(elapsed:Float) {

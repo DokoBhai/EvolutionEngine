@@ -77,6 +77,8 @@ class PlayState extends ScriptableState
 
 	public var songName(get, never):String;
 	public var songPath(get, never):String;
+	public var songStarted:Bool = false;
+	public var songEnded:Bool = false;
 	public var syncThreshold:Float = 25; // in ms
 	
 	// TEMPORARY
@@ -176,7 +178,11 @@ class PlayState extends ScriptableState
 
 		record('Character Creation');
 
-		inst = FlxG.sound.play(loadSound(Paths.inst(songPath)), 0.8, false);
+		inst = new FlxSound();
+		inst.loadEmbedded(loadSound(Paths.inst(songPath)), false, false, endSong);
+		inst.volume = 0.8;
+		FlxG.sound.list.add(inst);
+
 		voices = new VoicesHandler(inst, songPath);
 
 		inst.pause();
@@ -266,7 +272,9 @@ class PlayState extends ScriptableState
 								var precachedCharacter = character.clone();
 								precachedCharacter.alpha = 0.001;
 								insert(members.indexOf(character), precachedCharacter);
-								PrecacheUtil.precachedData.set('__character_data_${ev.values[1]}', precachedCharacter);
+
+								@:privateAccess
+								PrecacheUtil.__cache.set('__character_data_${ev.values[1]}', precachedCharacter);
 						}
 					}
 				}
@@ -290,7 +298,7 @@ class PlayState extends ScriptableState
 
 		if (inst != null)
 		{
-			if (Math.abs((voices.container[0] != null ? voices.time : inst.time) - (Conductor.songPosition - Conductor.offset)) > syncThreshold) {
+			if (!songEnded && Math.abs((voices.container[0] != null ? voices.time : inst.time) - (Conductor.songPosition - Conductor.offset)) > syncThreshold) {
 				sync();
 				trace('synced!');
 			}
@@ -346,8 +354,11 @@ class PlayState extends ScriptableState
 							final __lastChar = char;
 							final __precachedTag = '__character_data_${event.values[1]}';
 							char.kill();
-							characters[i] = PrecacheUtil.precachedData.get(__precachedTag);
-							PrecacheUtil.precachedData.remove(__precachedTag);
+
+							@:privateAccess {
+								characters[i] = PrecacheUtil.__cache.get(__precachedTag);
+								PrecacheUtil.__cache.remove(__precachedTag);
+							}
 							
 							char = characters[i];
 							remove(__lastChar);
@@ -357,11 +368,6 @@ class PlayState extends ScriptableState
 							char.playAnim(__lastChar.animation.curAnim.name);
 
 							for (note in hud.notes) {
-								if (note.character == __lastChar)
-									note.character = char;
-							}
-
-							for (note in hud.unspawnNotes) {
 								if (note.character == __lastChar)
 									note.character = char;
 							}
@@ -447,6 +453,13 @@ class PlayState extends ScriptableState
 		voices.play();
 
 		Conductor.trackedMusic = inst;
+
+		songStarted = true;
+	}
+
+	public function endSong() {
+		songEnded = true;
+		PrecacheUtil.clear();
 	}
 
 	public static function loadSong(songName:String, ?difficulty:String) {

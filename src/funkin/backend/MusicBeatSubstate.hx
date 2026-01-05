@@ -1,7 +1,5 @@
 package funkin.backend;
 
-import openfl.system.System;
-
 import funkin.backend.input.Controls;
 import funkin.game.Character;
 import funkin.states.*;

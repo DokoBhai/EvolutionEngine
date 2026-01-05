@@ -84,7 +84,7 @@ typedef CodenameCharacter =
 	scale:String
 }
 
-class Character extends FlxSprite implements IBeatListener {
+class Character extends FunkinSprite implements IBeatListener {
 	public static var FALLBACK_CHARACTER = 'bf';
 
 	public var data:CharacterData;
