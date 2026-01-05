@@ -84,6 +84,12 @@ class PlayState extends ScriptableState {
     public var songStarted:Bool = false;
     public var songEnded:Bool = false;
     public var syncThreshold:Float = 25; // in ms
+	public var health(default, set):Float = 1;
+	public function set_health(val:Float):Float {
+		health = val;
+		if(hud != null) hud.updateHealthIcons();
+		return val;
+	}
 
 	function get_songName() return song?.songName ?? '';
 	function get_songPath() return song?.songPath ?? '';
@@ -198,6 +204,9 @@ class PlayState extends ScriptableState {
         hud.loadStrums();
         hud.loadNotes();
 		initEvents();
+
+		hud.loadHealthBar("bf", "bf");
+		health = 1;
 
 		if (GameplayModifiers.opponentMode) {
 			for (strumline in hud.strumlines)

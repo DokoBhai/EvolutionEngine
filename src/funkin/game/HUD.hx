@@ -176,7 +176,9 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 			updateNotes();
 	}
 
-	public function beatHit(curBeat:Int):Void {}
+	public function beatHit(curBeat:Int):Void {
+		bopIcons(0.3, 0.5);
+	}
 	public function stepHit(curStep:Int):Void {}
 	public function measureHit(curMeasure:Int):Void {}
 }
