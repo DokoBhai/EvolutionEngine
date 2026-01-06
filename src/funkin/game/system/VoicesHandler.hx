@@ -74,8 +74,11 @@ class VoicesHandler implements IFlxDestroyable {
 	public function addVoices(?postfix:String = '') {
 		final path = Paths.voices(songPath, postfix, true);
 		if (Paths.exists(path, true) && !postfixes.exists(postfix)) {
-			var voices = FlxG.sound.play(loadSound(path));
+			var voices = new FlxSound();
+			voices.loadEmbedded(loadSound(path));
 			voices.endTime = inst.endTime;
+			FlxG.sound.list.add(voices);
+
 			container.push(voices);
 			postfixes.set(postfix, voices);
 

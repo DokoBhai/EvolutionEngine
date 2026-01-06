@@ -1,17 +1,22 @@
 package funkin.game;
 
-import funkin.substates.LoadingSubstate;
+import flixel.math.FlxPoint;
+import flixel.FlxObject;
+import flixel.ui.FlxBar;
 import flixel.util.FlxSort;
-import funkin.game.hud.Strumline;
 import funkin.game.hud.NoteGroup;
-import funkin.game.system.SongData;
+import funkin.game.hud.Strumline;
+import funkin.game.hud.HealthIcon;
 import funkin.game.system.SongData.Song;
+import funkin.game.system.SongData;
+import funkin.substates.LoadingSubstate;
 
+@:access(funkin.game.hud.NoteGroup)
 class HUD extends FlxSpriteGroup implements IBeatListener {
 	public var strumlines:Array<Strumline> = [];
 	public var strums:Array<Strum> = [];
 	public var notes:NoteGroup;
-	public var unspawnNotes:Array<Note> = [];
+	public var unspawnNotes:Array<ChartNote> = [];
 	public var game:PlayState;
 
 	public var onNoteDestroyed:FlxTypedSignal<Note->Void>;
@@ -24,8 +29,71 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 		onNoteDestroyed = new FlxTypedSignal();
 	}
 
+	/* Health Bar & Icons */
+
+	public var healthBar:FlxBar;
+	public var iconP1:HealthIcon;
+	public var iconP2:HealthIcon;
+	var iconXGap:Float = -20;
+	public function loadHealthBar(playerIcon:String, opponentIcon:String) {
+		healthBar = new FlxBar(0, 0, RIGHT_TO_LEFT, int(FlxG.width / 2), 15, game, "health", 0, 2, true);
+		healthBar.screenCenter(X);
+		healthBar.y = FlxG.height - healthBar.height - 60;
+		healthBar.createFilledBar(FlxColor.RED, FlxColor.LIME, true, FlxColor.BLACK);
+		healthBar.numDivisions = 1000;
+		add(healthBar);
+
+		iconP1 = new HealthIcon(0, 0, playerIcon, true);
+		iconP1.followObject = true;
+		iconP1.trackerOffset.x = iconXGap;
+		add(iconP1);
+
+		iconP2 = new HealthIcon(0, 0, opponentIcon, false);
+		iconP2.followObject = true;
+		iconP2.trackerOffset.x = -iconP2.width - iconXGap;
+		add(iconP2);
+	}
+
+	public dynamic function bopIcons(bopAmount:Float = 0.3, duration:Float = 0.5) {
+		iconP1.bop(bopAmount, duration);
+		iconP2.bop(bopAmount, duration);
+	}
+
+	public dynamic function updateHealthIcons() {
+		iconP1.posTracker.set(healthBar.x + (healthBar.width * (1 - (game.health / 2))), healthBar.y - (iconP1.height/2));
+		iconP2.posTracker.set(healthBar.x + (healthBar.width * (1 - (game.health / 2))), healthBar.y - (iconP2.height/2));
+
+		iconP1.state = (game.health > 0.2 ? NORMAL : LOSING);
+		iconP2.state = (game.health < 1.8 ? NORMAL : LOSING);
+	}
+
+	/* Score Text */
+
+	public var scoreTxt:FlxText;
+	public var scoreFormat:String = 'Score: {0}  •  Misses: {1}  •  Accuracy: {2}%  •  {3}';
+	public function loadScoreText() {
+		scoreTxt = new FunkinText(0, healthBar.y + 25, FlxG.width, scoreFormat);
+		scoreTxt.setFormat(Paths.font('vcr'), 20, 0xFFFFFFFF, CENTER, OUTLINE, 0xFF000000);
+		add(scoreTxt);
+	}
+
+	public function updateScoreText() {
+		if (scoreTxt != null) {
+			final placeholders:Array<String> = [ 
+				string(game.songScore), string(game.songMisses), 
+				string(game.songAccuracy), 'N/A' 
+			];
+
+			scoreTxt.text = scoreFormat;
+			for (i => placeholder in placeholders)
+				scoreTxt.text = scoreTxt.text.replace('{$i}', placeholder);
+		}
+	}
+
+	/* Strums & Notes */
+
 	public function loadStrums() {
-		var characters = game.characters;
+		var characters = game.characters.copy();
 		characters.reverse();
 
 		for (char in characters) {
@@ -41,11 +109,16 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 			if (char.isPlayer)
 				strumline.x += FlxG.width/2;
 		}
+		characters.resize(0);
 	}
 
 	public function loadNotes() {
 		final song = PlayState.song;
 		for (i => note in song.chart.notes) {
+			unspawnNotes.push(note);
+			if (note.strumTime > game.spawnTime * 2) // other notes gets recycled
+				continue;
+
 			var leNote = new Note(note.noteData, false, note.character, null, PlayState.isPixelStage);
 			leNote.y += FlxG.height * camera.zoom;
 			leNote.strumTime = note.strumTime;
@@ -53,7 +126,6 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 			final strumline = strumlines[note.character];
 			leNote.strum = strumline.members[note.noteData];
 			strumline.notes.push(leNote);
-			unspawnNotes.push(leNote);
 
 			leNote.get_canBeHit = function()
 				return Math.abs(Conductor.songPosition - leNote.strumTime) <= 188;
@@ -88,8 +160,18 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 		for (note in unspawnNotes) {
 			if (Conductor.songPosition + game.spawnTime >= note.strumTime) {
 				unspawnNotes.remove(note);
-				notes.add(note);
-				note.spawned = true;
+
+				var leNote = NoteGroup.recycleNote(note.noteData, false, note.character, null, PlayState.isPixelStage);
+				leNote.y = FlxG.height * camera.zoom;
+				leNote.strumTime = note.strumTime;
+
+				final strumline = strumlines[note.character];
+				leNote.strum = strumline.members[note.noteData];
+				strumline.notes.push(leNote);
+
+				leNote.get_canBeHit = function() return Math.abs(Conductor.songPosition - leNote.strumTime) <= 188;
+				notes.add(leNote);
+				leNote.spawned = true;
 
 				notes.members.sort(sortByTime);
 			}
@@ -106,7 +188,8 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 		FlxTween.cancelTweensOf(note);
 		if (notes.members.contains(note))
 			notes.remove(note);
-		note.destroy();
+		note.kill();
+		NoteGroup.recyclable.push(note);
 	}
 
 	override function update(elapsed:Float) {
@@ -114,9 +197,13 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 		
 		if (notes != null)
 			updateNotes();
+
+		updateScoreText();
 	}
 
-	public function beatHit(curBeat:Int):Void {}
+	public function beatHit(curBeat:Int):Void {
+		bopIcons(0.3, 0.5);
+	}
 	public function stepHit(curStep:Int):Void {}
 	public function measureHit(curMeasure:Int):Void {}
 }

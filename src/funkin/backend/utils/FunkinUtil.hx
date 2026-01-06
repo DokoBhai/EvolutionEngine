@@ -26,8 +26,7 @@ import sys.thread.Thread;
 		Tries and load animated frames if there is an XML detected,
 		else it'll fallback to a normal inanimated sprite.
 	 */
-	static function tryLoadFrames(sprite:FlxSprite, path:String, ?showError:Bool)
-	{
+	static function tryLoadFrames(sprite:FlxSprite, path:String, ?showError:Bool) {
 		if (Paths.sparrowExists(path))
 			sprite.frames = loadSparrowAtlas(path, showError);
 		else
@@ -40,6 +39,14 @@ import sys.thread.Thread;
 
 	static inline function fromRGBArray(rgb:Array<Int>)
 		return FlxColor.fromRGB(rgb[0], rgb[1], rgb[2]);
+
+	static inline function copyStruct<T>(struct:T):T {
+		var ret:Dynamic = {};
+		for (field in Reflect.fields(struct))
+			Reflect.setField(ret, field, Reflect.field(struct, field));
+
+		return cast ret;
+	}
 
 	static function attemptAddAnimationByPrefix(sprite:FlxSprite, animName:String, prefix:String, frameRate:Int, looped:Bool)
 	{

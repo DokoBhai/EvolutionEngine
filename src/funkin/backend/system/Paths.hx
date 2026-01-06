@@ -1,12 +1,26 @@
 package funkin.backend.system;
 
 import funkin.backend.system.Mods;
+import flixel.graphics.FlxGraphic;
+import openfl.display.BitmapData;
 
 @:publicFields class Paths {
 	public static var DEBUG_MODE:Bool = true;
 
 	inline static function image(key:String, ?showError:Bool):String
 		return getPath('images/$key.${Flags.IMAGE_EXT}', null, null, null, showError);
+
+	static function getImage(key:String, ?showError:Bool):FlxGraphic {
+		var path:String = getPath('images/$key.${Flags.IMAGE_EXT}', null, null, null, showError);
+		return bitmapToFlxGraphic(PrecacheUtil.bitmap(path), path);
+	}
+
+	inline static function bitmapToFlxGraphic(bitmap:BitmapData, path:String) {
+		var newGraphic:FlxGraphic = FlxGraphic.fromBitmapData(bitmap, false, path);
+		newGraphic.persist = true;
+		newGraphic.destroyOnNoUse = false;
+		return newGraphic;
+	}
 
 	inline static function font(key:String, ?showError:Bool):String
 		return getPath('fonts/$key', false, Flags.FONT_EXT, null, showError);

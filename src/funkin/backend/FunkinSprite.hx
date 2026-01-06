@@ -8,4 +8,8 @@ class FunkinSprite extends FlxSprite {
         super(X, Y, SimpleGraphic);
         antialiasing = true; // wip ; placeholder. Preferences isn't made yet.
     }
+
+    inline public function hasAnimation(name:String):Bool {
+		return (this.animation != null && this.animation.exists(name));
+    }
 }

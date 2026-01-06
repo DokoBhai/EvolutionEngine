@@ -20,6 +20,7 @@ class LoadingSubstate extends MusicBeatSubstate {
     
     var background:FlxSprite;
     var loadingBar:FlxSprite;
+    var title:FlxText;
     var loadingLabel:FlxText;
     var loadingDesc:FlxText;
     var progressTxt:FlxText;
@@ -34,6 +35,13 @@ class LoadingSubstate extends MusicBeatSubstate {
         background.scale.set(FlxG.width, FlxG.height);
         background.updateHitbox();
         add(background);
+
+        var titleBG = new FlxSprite().makeGraphic(FlxG.width, 40, 0xFF000000);
+        add(titleBG);
+
+        title = new FlxText(5, 5, FlxG.width, 'Please wait..');
+        title.setFormat(Paths.font('funkin'), 36);
+        add(title);
 
         loadingBar = new FlxSprite(0, FlxG.height - 20).makeGraphic(1, 20, 0xFFFFFFFF);
         add(loadingBar);

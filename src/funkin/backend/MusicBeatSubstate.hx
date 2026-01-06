@@ -1,7 +1,5 @@
 package funkin.backend;
 
-import openfl.system.System;
-
 import funkin.backend.input.Controls;
 import funkin.game.Character;
 import funkin.states.*;
@@ -71,8 +69,7 @@ class MusicBeatSubstate extends FlxSubState implements IBeatListener
 	var __lastBeat:Int = -1;
 	var __lastMeasure:Int = -1;
 
-	override function update(elapsed:Float)
-	{
+	override function update(elapsed:Float) {
 		super.update(elapsed);
 
 		if (__lastStep != Conductor.curStep)
