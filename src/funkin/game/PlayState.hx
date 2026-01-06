@@ -3,11 +3,13 @@ package funkin.game;
 import flixel.FlxObject;
 import flixel.math.FlxPoint;
 import flixel.text.FlxText.FlxTextFormatMarkerPair;
-
+import funkin.backend.scripting.events.*;
+import funkin.backend.scripting.events.game.*;
 import funkin.game.*;
+import funkin.game.hud.StrumGroup;
 import funkin.game.system.*;
-import funkin.game.system.SongData.ChartEventGroup;
 import funkin.game.system.SongData.ChartEvent;
+import funkin.game.system.SongData.ChartEventGroup;
 import funkin.game.system.SongData.Player;
 import funkin.game.hud.StrumGroup;
 
@@ -247,7 +249,8 @@ class PlayState extends ScriptableState {
 
 		hud.loadScoreText();
 
-		if (GameplayModifiers.opponentMode) {
+		if (GameplayModifiers.opponentMode)
+		{
 			for (strumline in hud.strumlines)
 				strumline.cpu = !strumline.cpu;
 		}
@@ -260,9 +263,7 @@ class PlayState extends ScriptableState {
 		pressLeEnter = new FlxText(0, 0, 0);
 		pressLeEnter.camera = camHUD;
 		pressLeEnter.setFormat(Paths.font('funkin'), 26, -1, CENTER, OUTLINE, 0xFF000000);
-		pressLeEnter.applyMarkup('Press <y>ENTER<y> to Start the Song', [
-			new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFFFFF00), '<y>')
-		]);
+		pressLeEnter.applyMarkup('Press <y>ENTER<y> to Start the Song', [new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFFFFF00), '<y>')]);
 		pressLeEnter.borderSize = 2;
 		pressLeEnter.screenCenter();
 		add(pressLeEnter);
@@ -483,7 +484,8 @@ class PlayState extends ScriptableState {
 				for (event in eventGrp.events)
 					triggerEvent(event, eventGrp.strumTime);
 				events.remove(eventGrp);
-			} else
+			}
+			else
 				break; // no point in iterating on future events
 		}
     }
@@ -803,7 +805,8 @@ class PlayState extends ScriptableState {
 		}
 	}
 
-	override function beatHit(curBeat:Int) {
+	override function beatHit(curBeat:Int)
+	{
 		super.beatHit(curBeat);
 
 		call('beatHit', [curBeat]);
@@ -811,7 +814,8 @@ class PlayState extends ScriptableState {
 		callBeatListeners(l -> l.beatHit(curBeat));
 	}
 
-	override function measureHit(curMeasure:Int) {
+	override function measureHit(curMeasure:Int)
+	{
 		super.measureHit(curMeasure);
 
 		call('measureHit', [curMeasure]);
@@ -826,9 +830,11 @@ class PlayState extends ScriptableState {
      */
     function callBeatListeners(f:Dynamic->Void) {
 		for (character in characters)
-			try {
+			try
+			{
 				f(character);
-			} catch(e:Dynamic)
+			}
+			catch (e:Dynamic)
 				trace(e.toString());
 
 		f(stage);
