@@ -414,25 +414,65 @@ class PlayState extends ScriptableState {
         }
     }
 
-    /**
-     * Checks if the pause key was pressed, pause the game if so.
-     * Can be cancelled with scripts.
-     */
-    function checkForPause() {
-		if (!pressedEnter && !songEnded && FlxG.keys.justPressed.ENTER) {
-			/*
-			var subState = new MusicBeatSubstate();
-			var event = new GamePauseEvent(Conductor.songPosition, subState);
+	/**
+	 * Checks if the pause key was pressed, pause the game if so.
+	 * Can be cancelled with scripts.
+	 */
+	var isPaused:Bool = false;
+
+	var canPause:Bool = true;
+
+	function checkForPause()
+	{
+		if (FlxG.keys.justPressed.ENTER && canPause && pressedEnter && !songEnded)
+		{
+			var subState = new funkin.game.substates.PauseSubstate(this);
+			var event:GamePauseEvent = new GamePauseEvent(Conductor.songPosition, subState);
+
 			call('onPause', [event]);
-            if (!event.cancelled) {
+			if (!event.cancelled)
+			{
+				persistentDraw = true;
+				persistentUpdate = false;
+				isPaused = true;
+
 				openSubState(subState);
-                // TODO:
-                // make a pause menu
-            } else
+			}
+			else
 				subState.close();
-			*/
-        }
-    }
+		}
+	}
+
+	// Just some managing for substates, so the song pauses when a substate is opened
+	override function openSubState(SubState:FlxSubState)
+	{
+		if (isPaused) {
+			FlxTimer.globalManager.forEach(function(tmr:FlxTimer) if (!tmr.finished) tmr.active = false);
+			FlxTween.globalManager.forEach(function(twn:FlxTween) if (!twn.finished) twn.active = false);
+
+			inst?.pause();
+			voices?.pause();
+		}
+
+		super.openSubState(SubState);
+	}
+
+	override function closeSubState()
+	{
+		super.closeSubState();
+
+		if (isPaused) {
+			sync();
+			FlxTimer.globalManager.forEach(function(tmr:FlxTimer) if (!tmr.finished) tmr.active = true);
+			FlxTween.globalManager.forEach(function(twn:FlxTween) if (!twn.finished) twn.active = true);
+
+			isPaused = false;
+			persistentDraw = true;
+			persistentUpdate = true;
+			inst?.resume();
+			voices?.resume();
+		}
+	}
 
     function keyPressed(key:Int) {
 		call('keyPressed', [key]);
