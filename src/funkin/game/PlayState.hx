@@ -2,6 +2,7 @@ package funkin.game;
 
 import flixel.FlxObject;
 import flixel.math.FlxPoint;
+import flixel.util.FlxTimer;
 import flixel.text.FlxText.FlxTextFormatMarkerPair;
 import funkin.backend.scripting.events.*;
 import funkin.backend.scripting.events.game.*;
