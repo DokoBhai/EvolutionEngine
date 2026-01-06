@@ -1,5 +1,6 @@
 package funkin.game.substates;
 
+@:access(funkin.game.PlayState)
 class PauseSubstate extends MusicBeatSubstate {
     public var menuOptions:FlxTypedGroup<FunkinText>;
 
@@ -11,13 +12,16 @@ class PauseSubstate extends MusicBeatSubstate {
     // Objects
 	var bg:FlxSprite; // Only making this global so it can be used in scripts
 
-    public var parentInstance:MusicBeatState;
-    override public function new(parentInstance:MusicBeatState) {
+	public var parentInstance:PlayState;
+    override public function new(parentInstance:PlayState) {
 		this.parentInstance = parentInstance;
         super();
     }
 
     override public function create() {
+		this.camera = FlxG.cameras.list[FlxG.cameras.list.length - 1];
+		super.create();
+
 		bg = new FlxSprite().makeGraphic(1, 1, FlxColor.BLACK);
 		bg.scale.set(FlxG.width, FlxG.height);
 		bg.updateHitbox();
@@ -33,8 +37,6 @@ class PauseSubstate extends MusicBeatSubstate {
 
 		FlxTween.tween(bg, {alpha: 0.6}, 0.5, {ease: FlxEase.sineOut});
 		canSelect = true;
-
-        super.create();
     } 
 
     override public function update(elapsed:Float) {
@@ -79,7 +81,7 @@ class PauseSubstate extends MusicBeatSubstate {
             });
         }
 		for (i => item in options) {
-            var text:FunkinText = new FunkinText(20 + (i * 20), 250 + (i * 90), 0, item, 35);
+            var text:FunkinText = new FunkinText(100 + (i * 20), 250 + (i * 90), 0, item, 35);
 			text.setFormat(Paths.font('funkin'), 35, 0xFFFFFFFF, LEFT, OUTLINE, 0xFF000000);
 			text.ID = i;
 			menuOptions.add(text);
