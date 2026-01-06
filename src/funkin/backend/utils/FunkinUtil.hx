@@ -73,6 +73,14 @@ import sys.thread.Thread;
 		return null;
 	}
 
+	static function floorDecimal(value:Float, decimals:Int):Float
+	{
+		if (decimals < 1)
+			return Math.floor(value);
+
+		return Math.floor(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
+	}
+
 	static function last<T>(list:Array<T>, ?toFind:T):T
 	{
 		if (toFind != null)

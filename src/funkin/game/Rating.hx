@@ -7,16 +7,18 @@ class Rating {
     public var timing:Float;
     public var score:Int;
     public var hits:Int;
+    public var factor:Float;
 
-    public function new(name:String, timing:Float, score:Int) {
+    public function new(name:String, timing:Float, score:Int, factor:Float) {
         this.name = name;
         this.timing = timing;
         this.score = score;
+        this.factor = factor;
         ratings.push(this);
     }
 
-    public static function add(name:String, timing:Float, score:Int):Rating {
-        return new Rating(name, timing, score);
+	public static function add(name:String, timing:Float, score:Int, factor:Float):Rating {
+        return new Rating(name, timing, score, factor);
     }
 
     public static function judge(strumTime:Float, hitTime:Float):Rating {

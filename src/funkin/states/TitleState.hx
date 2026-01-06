@@ -2,7 +2,7 @@ package funkin.states;
 
 class TitleState extends MusicBeatState
 {
-	introText:FlxText;
+	var introText:FlxText;
 
 	override function create()
 	{
@@ -15,14 +15,11 @@ class TitleState extends MusicBeatState
         add(introText);
 	}
 
-    private var beat:Int = 0;
-
-    override function onBeatHit(beat:Int)
+    override function beatHit(curBeat:Int)
     {
-        super.onBeatHit(beat);
-        beat++;
+        super.beatHit(curBeat);
 
-        switch(beats)
+		switch(curBeat)
         {
             case 1:
                 introText.text = "Hai!";
@@ -33,7 +30,7 @@ class TitleState extends MusicBeatState
             case 4:
                 introText.text = "End this demo pls";
             case 5:
-                FlxG.switchState(new PlayState());
+                FlxG.switchState(new funkin.states.FreeplayState());
         }
 
     }
