@@ -15,7 +15,6 @@ import funkin.game.system.SongData.Player;
 import sys.FileSystem;
 #end
 
-
 enum BeatType
 {
 	STEP;
@@ -26,29 +25,60 @@ enum BeatType
 typedef CharacterChangeData =
 {
 	character:Character,
-	initialCharacter:String
+	nextCharacter:String,
+	previousCharacter:String
 }
 
-@:access(funkin.game.system.SongData)
-@:access(funkin.game.Stage)
-@:access(funkin.game.objects.HUD)
-@:access(funkin.game.objects.Character)
+typedef CampaignData =
+{
+	score:Int,
+	misses:Int,
+	accuracy:Float,
+
+	sicks:Int,
+	goods:Int,
+	bads:Int,
+	shits:Int
+}
+
 class PlayState extends ScriptableState
 {
+	// basic game objects
 	public var stage:ScriptableStage;
 	public var characters:Array<Character> = [];
-	public var boyfriend:Character;
 	public var bf:Character;
 	public var dad:Character;
 	public var gf:Character;
 
+	public var camGame:FunkinCamera;
+	public var camHUD:FunkinCamera;
+	public var camFollow:FlxObject;
+	public var hud:HUD;
+
+	// basic song elements
+	public var inst:FlxSound;
+	public var voices:VoicesHandler;
+
+	// aliases
+	public var boyfriend(get, never):Character;
+	public var girlfriend(get, never):Character;
+
+	function get_boyfriend():Character
+		return bf;
+
+	function get_girlfriend():Character
+		return gf;
+
+	// camera attributes
 	var __camZoomInterval(get, never):Int;
+
 	public var camZoomInterval:Int = 1;
 	public var camBeatEvery:BeatType = MEASURE;
 	public var gameBeatZoom:Float = 0.028;
-	public var hudBeatZoom:Float = 0.023;
+	public var hudBeatZoom:Float = 0.015;
 
-	function get___camZoomInterval() {
+	function get___camZoomInterval()
+	{
 		final mult = switch (camBeatEvery)
 		{
 			case MEASURE: 16;
@@ -58,27 +88,59 @@ class PlayState extends ScriptableState
 		return camZoomInterval * mult;
 	}
 
-	public var camGame:FunkinCamera;
-	public var camHUD:FunkinCamera;
-	public var camFollow:FlxObject;
-	public var hud:HUD;
-
-	public var noteKillWindow:Float = 376; // in ms 
-	public var spawnTime:Float = 2000; // in ms
+	// gameplay attributes
+	public var noteKillWindow:Float = 376;
+	public var spawnTime:Float = 2000;
 	public var playerStrums:StrumGroup;
 	public var opponentStrums:StrumGroup;
+	public var scrollSpeed:Float = 1;
 
-	public var inst:FlxSound;
-	public var voices:VoicesHandler;
+	// scoring-related
+	public var songScore:Int = 0;
+	public var songMisses:Int = 0;
+	public var songAccuracy:Float = 0;
+	public var ratingName:String = 'N/A';
 
+	public static var ratingList:Map<String, Float> = [
+		'X' => 1,
+		'S+' => 0.99,
+		'S' => 0.95,
+		'A' => 0.9,
+		'B' => 0.8,
+		'C' => 0.65,
+		'D' => 0.5,
+		'E' => 0.55,
+		'F' => 0.4
+	];
+
+	public static var weekPlaylist:Array<String> = [];
+	public static var weekDifficulty:String = '';
+	public static var defaultCampaignData:CampaignData = {
+		score: 0,
+		misses: 0,
+		accuracy: 0,
+		sicks: 0,
+		goods: 0,
+		bads: 0,
+		shits: 0
+	}
+	public static var campaignData:CampaignData = copyStruct(defaultCampaignData);
+
+	// song attributes
 	public var songName(get, never):String;
 	public var songPath(get, never):String;
+	public var songStarted:Bool = false;
+	public var songEnded:Bool = false;
 	public var syncThreshold:Float = 25; // in ms
-	
-	// TEMPORARY
-	public var pressLeEnter:FlxText;
-	
-	public var scrollSpeed:Float = 1;
+	public var health(default, set):Float = 1;
+
+	public function set_health(val:Float):Float
+	{
+		health = FlxMath.bound(val, 0, 2);
+		if (hud != null)
+			hud.updateHealthIcons();
+		return health;
+	}
 
 	function get_songName()
 		return song?.songName ?? '';
@@ -86,8 +148,11 @@ class PlayState extends ScriptableState
 	function get_songPath()
 		return song?.songPath ?? '';
 
-	public var singAnimations:Array<String> = [ 'singLEFT', 'singDOWN', 'singUP', 'singRIGHT' ];
+	// misc
+	public var singAnims:Array<String> = ['singLEFT', 'singDOWN', 'singUP', 'singRIGHT'];
+	public var keyNames:Array<String> = ['note_left', 'note_down', 'note_up', 'note_right'];
 
+	// static vars
 	public static var song(default, set):SongData;
 	public static var isPixelStage(default, set):Bool = false;
 
@@ -103,10 +168,19 @@ class PlayState extends ScriptableState
 	static function set_isPixelStage(value:Bool)
 		return isPixelStage = value;
 
-	override function create() {
-		final songToLoad = 'unknown-suffering';
-		loadSong(songToLoad, getMedianDifficulty(songToLoad));
+	// TEMPORARY UNTIL COUNTDOWN IS A THING!!
+	public var pressLeEnter:FlxText;
+	public var pressedEnter:Bool = false;
 
+	override function create()
+	{
+		if (song == null)
+		{
+			final songToLoad = 'unknown-suffering';
+			loadSong(songToLoad, getMedianDifficulty(songToLoad));
+		}
+
+		// loading scripts
 		if (songPath != null && Paths.exists('songs/$songPath/scripts'))
 			addScriptsFromDirectory('songs/$songPath/scripts');
 
@@ -115,11 +189,13 @@ class PlayState extends ScriptableState
 		if (FlxG.sound.music != null)
 			FlxG.sound.music.stop();
 
+		// ratings initialization
 		Rating.add('sick', 45, 350);
 		Rating.add('good', 90, 250);
 		Rating.add('bad', 135, 100);
 		Rating.add('shit', 188, 100);
 
+		// cameras
 		camGame = new FunkinCamera();
 		FlxG.cameras.add(camGame);
 		FlxG.camera = camGame;
@@ -131,6 +207,7 @@ class PlayState extends ScriptableState
 		camHUD.bgColor.alpha = 0;
 		FlxG.cameras.add(camHUD, false);
 
+		// hud elements
 		hud = new HUD(this);
 		hud.camera = camHUD;
 		add(hud);
@@ -140,74 +217,54 @@ class PlayState extends ScriptableState
 		playerStrums.camera = hud.camera;
 		opponentStrums.camera = hud.camera;
 
-		record('initial', true);
-
+		// loading stage
 		stage = new ScriptableStage(song.stage);
 		add(stage);
 		camGame.defaultCamZoom = stage?.defaultCamZoom ?? 0.9;
-
-		record('Stage Creation');
 
 		scrollSpeed = (song?.scrollSpeed ?? 1) * GameplayModifiers.scrollMult;
 
 		call('create');
 
-		var sortedCharacter:Array<Player> = song?.characters ?? [];
-		sortedCharacter.reverse(); // so the last added gets to the bottom
-		for (j => char in sortedCharacter)
+		var characterInfos:Array<Player> = (song?.characters ?? []);
+		characterInfos.reverse();
+		for (j => charInfo in characterInfos)
 		{
-			final i = sortedCharacter.length - 1 - j;
-			var character = new Character(stage.characterPositions[i]?.x ?? 0, stage.characterPositions[i]?.y ?? 0, char.name, char.isPlayer);
-			characters.push(character);
-			character.hideStrumline = char.hideStrumline ?? false;
+			final i = characterInfos.length - 1 - j;
+			var character = new Character(stage.characterPositions[i]?.x ?? 0, stage.characterPositions[i]?.y ?? 0, charInfo.name, charInfo.isPlayer);
+			character.hideStrumline = charInfo.hideStrumline ?? false;
 			character.characterID = i;
 			add(character);
+			characters.push(character);
 		}
 
 		dad = first(characters.filter(c -> return !c.isPlayer && !c.isBopper));
 		bf = first(characters.filter(c -> return c.isPlayer && !c.isBopper));
 		gf = first(characters.filter(c -> return c.isBopper));
-		boyfriend = bf;
 		focusCharacter();
 
-		record('Character Creation');
+		inst = new FlxSound();
+		inst.loadEmbedded(loadSound(Paths.inst(songPath)), false, false, endSong);
+		inst.volume = 0.8;
+		FlxG.sound.list.add(inst);
 
-		inst = FlxG.sound.play(loadSound(Paths.inst(songPath)), 0.8, false);
 		voices = new VoicesHandler(inst, songPath);
 
 		inst.pause();
 		voices.pause();
-
-		for (character in characters)
-			if (Paths.exists(Paths.voices(songPath, '-${character.name}', false), false))
-				voices.addVoices('-${character.name}');
-
-		for (postfix in ['-Player', '-Opponent', '-player', '-opponent'])
-			if (Paths.exists(Paths.voices(songPath, postfix, false), false))
-				voices.addVoices(postfix);
-
-		record('Music Setup');
+		initVoices();
 
 		hud.loadStrums();
-
-		record('Strums Loaded');
-
 		hud.loadNotes();
+		initEvents();
 
-		record('Notes Loaded');
+		hud.loadHealthBar("bf", "bf");
+		health = 1;
 
-		loadEvents();
+		hud.loadScoreText();
 
-		for (strumline in hud.strumlines) {
-			for (strum in strumline) {
-				if (strum.cpu)
-					opponentStrums.add(strum);
-				else
-					playerStrums.add(strum);
-			}
-		}
-
-		if (GameplayModifiers.opponentMode) {
+		if (GameplayModifiers.opponentMode)
+		{
 			for (strumline in hud.strumlines)
 				strumline.cpu = !strumline.cpu;
 		}
@@ -220,136 +277,298 @@ class PlayState extends ScriptableState
 		pressLeEnter = new FlxText(0, 0, 0);
 		pressLeEnter.camera = camHUD;
 		pressLeEnter.setFormat(Paths.font('funkin'), 26, -1, CENTER, OUTLINE, 0xFF000000);
-		pressLeEnter.applyMarkup('Press <y>ENTER<y> to Start the Song', [
-			new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFFFFF00), '<y>')
-		]);
+		pressLeEnter.applyMarkup('Press <y>ENTER<y> to Start the Song', [new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFFFFF00), '<y>')]);
 		pressLeEnter.borderSize = 2;
 		pressLeEnter.screenCenter();
 		add(pressLeEnter);
 	}
 
+	/**
+	 * Loads additional voice files for characters if they exists.
+	 */
+	function initVoices()
+	{
+		for (character in characters)
+		{
+			if (Paths.exists(Paths.voices(songPath, '-${character.name}', false), false))
+				voices.addVoices('-${character.name}');
+
+			for (postfix in ['-Player', '-Opponent', '-player', '-opponent'])
+				if (Paths.exists(Paths.voices(songPath, postfix, false), false))
+					voices.addVoices(postfix);
+		}
+	}
+
 	public var events:Array<ChartEventGroup> = [];
-	function loadEvents() {
+
+	/**
+	 * Initializes the events defined in the song's difficulty chart.
+	 */
+	function initEvents()
+	{
 		final songEvents = song?.chart?.events ?? null;
-		var characterChanges:Array<CharacterChangeData> = [];
-		
-		function changesExists(character:Character) {
-			for (change in characterChanges) {
-				if (change.character == character) {
-					trace('Changes lol!');
-					return true;
-				}
-			}
-			return false;
-		} 
+		if (songEvents == null)
+			return;
 
-		if (songEvents != null) {
-			for (eventGroup in songEvents) {
-				for (ev in eventGroup.events) {
-					var scrEvent = new EventLoadEvent(eventGroup.strumTime, ev);
-					call('onEventLoad', [scrEvent]);
+		var hasCharacterChanges:Bool = false;
+		final collectedChanges:Array<CharacterChangeData> = [];
+		for (eventGrp in songEvents)
+		{
+			for (event in eventGrp.events)
+			{
+				var scriptEvent = new EventLoadEvent(eventGrp.strumTime, event);
+				call('onLoadEvent', [scriptEvent]);
 
-					if (scrEvent.cancelled)
-						eventGroup.events.remove(ev);
-					else {
-						switch(ev.event) {
-							case 'Change Character': // character preloading
-								final character = characterFromID(ev.values[0]);
-								if (!changesExists(character))
-									characterChanges.push({ character: character, initialCharacter: character.name });
+				if (scriptEvent.cancelled)
+					eventGrp.events.remove(event);
+				else
+				{
+					switch (event.event)
+					{
+						case 'Change Character': // character preloading
+							hasCharacterChanges = true;
 
-								character.loadCharacter(ev.values[1]);
-								var precachedCharacter = character.clone();
-								precachedCharacter.alpha = 0.001;
-								insert(members.indexOf(character), precachedCharacter);
-								PrecacheUtil.precachedData.set('__character_data_${ev.values[1]}', precachedCharacter);
-						}
+							final char = characterFromID(event.values[0]);
+							collectedChanges.push({
+								character: char,
+								nextCharacter: event.values[1],
+								previousCharacter: char.name
+							});
 					}
 				}
-				events.push(eventGroup);
+				events.push(eventGrp);
 			}
 		}
-		record('Looped through Events');
 
-		for (change in characterChanges) {
-			final char = change.character;
-			char.loadCharacter(change.initialCharacter);
+		if (hasCharacterChanges)
+		{
+			initCharacterChanges(collectedChanges);
 		}
 
 		events.sort(HUD.sortByTime);
 		call('onEventsLoaded', []);
 	}
 
+	/**
+	 * Precaches characters that will present later in the song based on the given changes.
+	 * @param changes an Array of CharacterChangeData.
+	 */
+	function initCharacterChanges(changes:Array<CharacterChangeData>)
+	{
+		function changesExists(character:Character)
+		{
+			for (change in changes)
+			{
+				if (change.character == character)
+				{
+					trace('character "${character.name}" has changes, lol!');
+					return true;
+				}
+			}
+			return false;
+		}
+
+		for (change in changes)
+		{
+			final character = change.character;
+			character.loadCharacter(change.nextCharacter);
+
+			var precachedChar = character.clone();
+			precachedChar.alpha = 0.001;
+			insert(members.indexOf(character), precachedChar);
+
+			@:privateAccess
+			PrecacheUtil.__cache.set('character_obj_${change.nextCharacter}', [precachedChar]);
+
+			changes.remove(change);
+
+			if (!changesExists(character))
+			{
+				character.loadCharacter(change.previousCharacter);
+			}
+		}
+	}
+
 	var allowStart:Bool = true;
-	override function update(elapsed:Float) {
+
+	override function update(elapsed:Float)
+	{
 		call('update', [elapsed]);
 
 		if (inst != null)
 		{
-			if (Math.abs((voices.container[0] != null ? voices.time : inst.time) - (Conductor.songPosition - Conductor.offset)) > syncThreshold) {
+			if (!songEnded
+				&& Math.abs((voices.container[0] != null ? voices.time : inst.time) - (Conductor.songPosition - Conductor.offset)) > syncThreshold)
+			{
 				sync();
 				trace('synced!');
 			}
 		}
 
-		// this is obv wip, im js lazy rn
-		if (FlxG.keys.pressed.LEFT) keyPressed('LEFT');
-		if (FlxG.keys.pressed.DOWN) keyPressed('DOWN');
-		if (FlxG.keys.pressed.UP) keyPressed('UP');
-		if (FlxG.keys.pressed.RIGHT) keyPressed('RIGHT');
-		
-		if (FlxG.keys.justPressed.LEFT) keyJustPressed('LEFT');
-		if (FlxG.keys.justPressed.DOWN) keyJustPressed('DOWN');
-		if (FlxG.keys.justPressed.UP) keyJustPressed('UP');
-		if (FlxG.keys.justPressed.RIGHT) keyJustPressed('RIGHT');
-		
-		if (FlxG.keys.justReleased.LEFT) keyJustReleased('LEFT');
-		if (FlxG.keys.justReleased.DOWN) keyJustReleased('DOWN');
-		if (FlxG.keys.justReleased.UP) keyJustReleased('UP');
-		if (FlxG.keys.justReleased.RIGHT) keyJustReleased('RIGHT');
-
-		if (FlxG.keys.justPressed.ENTER && allowStart) {
-			allowStart = false;
-			startSong();
-
-			pressLeEnter.kill();
-		}
+		checkForKeys();
+		checkForPause();
 
 		checkForEvent(Conductor.songPosition);
+
+		if (FlxG.keys.justPressed.BACKSPACE)
+		{
+			FlxG.switchState(new funkin.states.FreeplayState());
+		}
 
 		super.update(elapsed);
 
 		call('updatePost', [elapsed]);
+
+		if (!pressedEnter && FlxG.keys.justPressed.ENTER)
+		{
+			pressedEnter = true;
+
+			startSong();
+			pressLeEnter.kill();
+		}
 	}
 
-	function checkForEvent(strumTime:Float) {
-		for (eventGrp in events) {
-			if (strumTime >= eventGrp.strumTime) {
+	/*
+	 * ######################
+	 * ##   INPUT CHECKS   ##
+	 * ######################
+	 */
+	/**
+		* Checks for key presses for each keybinds, calls keyPressed, keyJustPressed or keyJustReleased
+		  corresponding to the current user action.
+	 */
+	function checkForKeys()
+	{
+		for (keyName => keybinds in Preferences.keyBinds)
+		{
+			final index = keyNames.indexOf(keyName);
+			if (FlxG.keys.anyPressed(keybinds))
+				keyPressed(index);
+			if (FlxG.keys.anyJustPressed(keybinds))
+				keyJustPressed(index);
+			if (FlxG.keys.anyJustReleased(keybinds))
+				keyJustReleased(index);
+		}
+	}
+
+	/**
+	 * Checks if the pause key was pressed, pause the game if so.
+	 * Can be cancelled with scripts.
+	 */
+	function checkForPause()
+	{
+		if (!pressedEnter && !songEnded && FlxG.keys.justPressed.ENTER)
+		{
+			/*
+				var subState = new MusicBeatSubstate();
+				var event = new GamePauseEvent(Conductor.songPosition, subState);
+				call('onPause', [event]);
+				if (!event.cancelled) {
+					openSubState(subState);
+					// TODO:
+					// make a pause menu
+				} else
+					subState.close();
+			 */
+		}
+	}
+
+	function keyPressed(key:Int)
+	{
+		call('keyPressed', [key]);
+
+		for (strumline in hud.strumlines)
+		{
+			if (!strumline.cpu)
+			{
+				final strum = strumline.members[key];
+				if (!strum.animation.name.contains('confirm'))
+				{
+					strum.allowStatic = false;
+					strum.playAnim('press');
+				}
+			}
+		}
+	}
+
+	function keyJustPressed(key:Int)
+	{
+		call('keyJustPressed', [key]);
+
+		for (note in hud.notes)
+		{
+			if (note.noteData == key && !note.strum.cpu)
+			{
+				if (note.canBeHit)
+				{
+					hitNote(note);
+					break;
+				}
+			}
+		}
+	}
+
+	function keyJustReleased(key:Int)
+	{
+		call('keyJustReleased', [key]);
+
+		for (strumline in hud.strumlines)
+		{
+			if (!strumline.cpu)
+			{
+				final strum = strumline.members[key];
+				strum.playStatic();
+			}
+		}
+	}
+
+	/*
+	 * ############################
+	 * ##   SONG EVENT-RELATED   ##
+	 * ############################
+	 */
+	function checkForEvent(strumTime:Float)
+	{
+		for (eventGrp in events)
+		{
+			if (strumTime >= eventGrp.strumTime)
+			{
 				for (event in eventGrp.events)
-					onEvent(event, eventGrp.strumTime);
+					triggerEvent(event, eventGrp.strumTime);
 				events.remove(eventGrp);
-			} else
+			}
+			else
 				break; // no point in iterating on future events
 		}
 	}
 
-	function onEvent(event:ChartEvent, ?strumTime:Float = 0) {
+	function triggerEvent(event:ChartEvent, ?strumTime:Float)
+	{
+		strumTime ??= Conductor.songPosition;
+
 		var scriptEvent = new EventTriggeredEvent(event, strumTime);
 		call('onEvent', [scriptEvent]);
-		
-		if (!scriptEvent.cancelled) {
-			switch (event.event) { // hardcoded events
+
+		if (!scriptEvent.cancelled)
+		{
+			switch (event.event)
+			{ // hardcoded events
 				case 'Move Camera':
 					focusCharacter(int(event.values[0]));
 				case 'Change Character':
-					for (i => char in characters) {
-						if (char.characterID == event.values[0]) {
+					for (i => char in characters)
+					{
+						if (char.characterID == event.values[0])
+						{
 							final __lastChar = char;
 							final __precachedTag = '__character_data_${event.values[1]}';
 							char.kill();
-							characters[i] = PrecacheUtil.precachedData.get(__precachedTag);
-							PrecacheUtil.precachedData.remove(__precachedTag);
-							
+
+							@:privateAccess {
+								characters[i] = PrecacheUtil.__cache.get(__precachedTag);
+								PrecacheUtil.__cache.remove(__precachedTag);
+							}
+
 							char = characters[i];
 							remove(__lastChar);
 							char.setPosition(__lastChar.x, __lastChar.y);
@@ -357,17 +576,14 @@ class PlayState extends ScriptableState
 							char.visible = __lastChar.visible;
 							char.playAnim(__lastChar.animation.curAnim.name);
 
-							for (note in hud.notes) {
+							for (note in hud.notes)
+							{
 								if (note.character == __lastChar)
 									note.character = char;
 							}
 
-							for (note in hud.unspawnNotes) {
-								if (note.character == __lastChar)
-									note.character = char;
-							}
-
-							for (strumline in hud.strumlines) {
+							for (strumline in hud.strumlines)
+							{
 								if (strumline.character == __lastChar)
 									Reflect.setProperty(strumline, 'character', char);
 							}
@@ -376,7 +592,7 @@ class PlayState extends ScriptableState
 						}
 					}
 				case 'Play Animation':
-					final character = characterFromID(event.values[1]);	
+					final character = characterFromID(event.values[1]);
 					character.playAnim(event.values[0], true);
 					character.specialAnim = true;
 				case 'Add Camera Zoom':
@@ -386,8 +602,14 @@ class PlayState extends ScriptableState
 		}
 	}
 
-	function focusCharacter(characterID:Int = 0) {
-		characterID = int(FlxMath.bound(characterID, 0, characters.length-1));
+	/*
+	 * ########################
+	 * ##   CAMERA-RELATED   ##
+	 * ########################
+	 */
+	function focusCharacter(characterID:Int = 0)
+	{
+		characterID = int(FlxMath.bound(characterID, 0, characters.length - 1));
 		final character = characters[characterID];
 		final pos = character.getCameraPosition();
 
@@ -397,60 +619,162 @@ class PlayState extends ScriptableState
 			camFollow.setPosition(event.position.x, event.position.y);
 	}
 
-	function keyPressed(key:String) {
-		call('keyPressed', [key]);
+	/*
+	 * ################################
+	 * ##   NOTE HIT/MISS HANDLERS   ##
+	 * ################################
+	 */
+	/**
+	 * Hits the specified note.
+	 * Meant to be called internally.
+	 * @param note The note to be hit.
+	 */
+	public function hitNote(note:Note)
+	{
+		final rating = Rating.judge(note.strumTime, Conductor.songPosition);
+		if (rating == null)
+			return;
 
-		final index = (['LEFT', 'DOWN', 'UP', 'RIGHT']).indexOf(key);
-		for (strumline in hud.strumlines) {
-			if (!strumline.cpu) {
-				final strum = strumline.members[index];
-				if (!strum.animation.name.contains('confirm')) {
-					strum.allowStatic = false;
-					strum.playAnim('press');
+		final ratingName = rating?.name ?? '';
+		note.rating = ratingName;
+
+		if (ratingName != 'miss')
+		{
+			var event = new NoteEvent(note);
+			callHScript('noteHit', [event]);
+			if (note.strum.cpu)
+				callHScript('cpuNoteHit', [event]);
+			else
+				callHScript('playerNoteHit', [event]);
+
+			if (!event.cancelled)
+			{
+				if (!note.missed && !note.hit && note.spawned)
+				{
+					if (note.canBeHit)
+					{
+						note.hit = true;
+						note.strum.playAnim('confirm', true);
+
+						if (note.character != null)
+							note.character.playAnim(singAnims[note.noteData] + note.animSuffix, true);
+
+						hud.onNoteDestroyed.dispatch(note);
+						hud.disposeNote(note);
+
+						if (!note.cpu)
+						{
+							health += note.hitHealth ?? 0.023;
+							if (!note.isSustainNote)
+							{
+								songScore += rating.score;
+								rating.hits++;
+							}
+
+							var ratingPop = Popup.recycle(300, 0, PrecacheUtil.image('gameplay/${ratingName}'));
+							ratingPop.scale.set(0.6, 0.6);
+							ratingPop.updateHitbox();
+							ratingPop.pop();
+							add(ratingPop);
+						}
+
+						return;
+					}
+				}
+			}
+			note.rating = '';
+		}
+		else
+			noteMiss(note);
+	}
+
+	/**
+	 * Misses the specified note.
+	 * Meant to be called internally.
+	 * @param note The note to miss.
+	 */
+	public function noteMiss(note:Note)
+	{
+		var event = new NoteEvent(note);
+		callHScript('noteMiss', [event]);
+		if (note.strum.cpu)
+			callHScript('cpuNoteMiss', [event]); // amusia is that you?
+		else
+			callHScript('playerNoteMiss', [event]);
+
+		if (!event.cancelled)
+		{
+			if (!note.missed && !note.hit && note.spawned)
+			{
+				note.missed = true;
+				if (note.character != null)
+					note.character.playAnim('${singAnims[note.noteData]}miss' + note.animSuffix, true);
+
+				FlxTween.tween(note, {
+					multAlpha: 0,
+					multSpeed: 0.75,
+					'colorTransform.redOffset': 255,
+					'colorTransform.blueOffset': 255,
+					'colorTransform.greenOffset': 255
+				}, 0.2, {ease: FlxEase.cubeIn});
+
+				if (!note.cpu)
+				{
+					health -= note.missHealth ?? 0.043;
+
+					if (!note.isSustainNote)
+					{
+						songScore -= 10;
+						songMisses++;
+					}
 				}
 			}
 		}
 	}
 
-	function keyJustPressed(key:String) {
-		call('keyJustPressed', [key]);
-
-		final index = (['LEFT', 'DOWN', 'UP', 'RIGHT']).indexOf(key);
-		for (note in hud.notes) {
-			if (note.noteData == index && !note.strum.cpu) {
-				if (note.canBeHit) {
-					hitNote(note);
-					break;
-				}
-			}
-		}
-	}
-
-	function keyJustReleased(key:String) {
-		call('keyJustReleased', [key]);
-
-		final index = (['LEFT', 'DOWN', 'UP', 'RIGHT']).indexOf(key);
-		for (strumline in hud.strumlines) {
-			if (!strumline.cpu) {
-				final strum = strumline.members[index];
-				strum.playStatic();
-			}
-		}
-	}
-
-	public function sync() {
+	/*
+	 * #########################
+	 * ##   BACKEND HELPERS   ##
+	 * #########################
+	 */
+	/**
+	 * Syncs the music time for both instrumental and voices to the Conductor's song position.
+	 */
+	public function sync()
+	{
 		inst.time = Conductor.songPosition - Conductor.offset;
 		voices.sync();
 	}
 
-	public function startSong() {
+	/**
+	 * Starts the song.
+	 */
+	public function startSong()
+	{
 		inst.play();
 		voices.play();
 
 		Conductor.trackedMusic = inst;
+
+		songStarted = true;
 	}
 
-	public static function loadSong(songName:String, ?difficulty:String) {
+	/**
+	 * Ends the song.
+	 */
+	public function endSong()
+	{
+		songEnded = true;
+		PrecacheUtil.clear();
+	}
+
+	/**
+	 * Loads the song data, meant to be called before PlayState's creation.
+	 * @param songName The song to load.
+	 * @param difficulty The target difficulty of the song, defaults to the song's first difficulty.
+	 */
+	public static function loadSong(songName:String, ?difficulty:String)
+	{
 		difficulty ??= getDifficulties(songName)[0];
 		if (Paths.chart(songName, difficulty) != null)
 		{
@@ -459,7 +783,13 @@ class PlayState extends ScriptableState
 		}
 	}
 
-	public static function getDifficulties(?songName:String):Array<String> {
+	/**
+	 * Fetches the list of a song's difficulties
+	 * @param songName The song to fetch the difficulty list of. Defaults to the current song.
+	 * @return an Array of difficulty names.
+	 */
+	public static function getDifficulties(?songName:String):Array<String>
+	{
 		var diffs:Array<String> = [];
 		songName ??= song?.songName ?? '';
 		if (Paths.exists(Paths.song('$songName/charts', true), true))
@@ -476,7 +806,13 @@ class PlayState extends ScriptableState
 		return diffs;
 	}
 
-	public static function getMedianDifficulty(?songName:String):String {
+	/**
+	 * Fetches the middle difficulty of a song.
+	 * @param songName The song to fetch the median difficulty of. Defaults to the current song.
+	 * @return The difficulty name.
+	 */
+	public static function getMedianDifficulty(?songName:String):String
+	{
 		songName ??= song?.songName ?? '';
 		var difficulties = getDifficulties(songName);
 		if (difficulties.length > 0)
@@ -485,92 +821,58 @@ class PlayState extends ScriptableState
 		return null;
 	}
 
-	public function characterFromID(id:Int):Null<Character> {
-		for (i => char in characters) {
+	/**
+	 * Fetches the Character object from the specified ID.
+	 * @param id The ID number of the target Character.
+	 * @return The Character object, can be null.
+	 */
+	public function characterFromID(id:Int):Null<Character>
+	{
+		for (char in characters)
+		{
 			if (char.characterID == id)
 				return char;
 		}
 		return null;
 	}
 
-	public function characterIDFromName(name:String):Int {
-		for (i => char in characters) {
+	/**
+	 * Fetches the ID of the first Character found associated with the specified name.
+	 * @param name The name of the target Character.
+	 * @return The character's ID. `-1` is returned instead if the character isn't found.
+	 */
+	public function characterIDFromName(name:String):Int
+	{
+		for (char in characters)
+		{
 			if (char.name == name)
 				return char.characterID;
 		}
 		return -1;
 	}
 
-	public function characterFromName(name:String) {
-		for (char in characters) {
+	/**
+	 * Fetches the first Character object found associated with the specified name.
+	 * @param name The name of the target Character.
+	 * @return The Character object, can be null.
+	 */
+	public function characterFromName(name:String):Null<Character>
+	{
+		for (char in characters)
+		{
 			if (char.name == name)
 				return char;
 		}
 		return null;
 	}
 
-	public function hitNote(note:Note) {
-		final rating = Rating.judgeRating(note.strumTime, Conductor.songPosition);
-		note.rating = rating;
-
-		if (rating != 'miss') {
-			var event = new NoteEvent(note);
-			callHScript('noteHit', [event]);
-			if (note.strum.cpu) callHScript('cpuNoteHit', [event]);
-			else callHScript('playerNoteHit', [event]);
-
-			if (!event.cancelled) {
-				if (!note.missed && !note.hit && note.spawned) {
-					if (note.canBeHit) {
-						note.hit = true;
-						note.strum.playAnim('confirm', true);
-
-						if (note.character != null)
-							note.character.playAnim(singAnimations[note.noteData] + note.animSuffix, true);
-
-						hud.onNoteDestroyed.dispatch(note);
-						hud.disposeNote(note);
-
-						if (!note.cpu) {
-							var ratingPop = Popup.recycle(300, 0, PrecacheUtil.image('gameplay/$rating'));
-							ratingPop.scale.set(0.6, 0.6);
-							ratingPop.updateHitbox();
-							ratingPop.pop();
-							add(ratingPop);
-						}
-
-						return;
-					}
-				}
-			}
-			note.rating = '';
-		} else noteMiss(note);
-	}
-
-	public function noteMiss(note:Note) {
-		var event = new NoteEvent(note);
-		callHScript('noteMiss', [event]);
-		if (note.strum.cpu) callHScript('cpuNoteMiss', [event]); // amusia is that you?
-		else callHScript('playerNoteMiss', [event]);
-
-		if (!event.cancelled) {
-			if (!note.missed && !note.hit && note.spawned) {
-				note.missed = true;
-				if (note.character != null)
-					note.character.playAnim('${singAnimations[note.noteData]}miss' + note.animSuffix, true);
-
-				FlxTween.tween(note, { 
-					multAlpha: 0,
-					multSpeed: 0.75,
-					'colorTransform.redOffset': 255,
-					'colorTransform.blueOffset': 255,
-					'colorTransform.greenOffset': 255
-				}, 0.2, { ease: FlxEase.cubeIn });
-			}
-		}
-	}
-
-	override function stepHit(curStep:Int) {
+	/*
+	 * #####################
+	 * ##   BEAT EVENTS   ##
+	 * #####################
+	 */
+	override function stepHit(curStep:Int)
+	{
 		super.stepHit(curStep);
 
 		call('stepHit', [curStep]);
@@ -587,7 +889,8 @@ class PlayState extends ScriptableState
 		}
 	}
 
-	override function beatHit(curBeat:Int) {
+	override function beatHit(curBeat:Int)
+	{
 		super.beatHit(curBeat);
 
 		call('beatHit', [curBeat]);
@@ -595,7 +898,8 @@ class PlayState extends ScriptableState
 		callBeatListeners(l -> l.beatHit(curBeat));
 	}
 
-	override function measureHit(curMeasure:Int) {
+	override function measureHit(curMeasure:Int)
+	{
 		super.measureHit(curMeasure);
 
 		call('measureHit', [curMeasure]);
@@ -603,19 +907,33 @@ class PlayState extends ScriptableState
 		callBeatListeners(l -> l.measureHit(curMeasure));
 	}
 
-	override function call(f:String, ?args:Array<Dynamic>) {
-		super.call(f, args);
-		stage.call(f, args);
-	}
-
-	function callBeatListeners(f:Dynamic->Void) {
+	/**
+	 * Calls the corresponding beat function on the game's beat listeners.
+	 * Meant to be called internally.
+	 * @param f 
+	 */
+	function callBeatListeners(f:Dynamic->Void)
+	{
 		for (character in characters)
-			try {
+			try
+			{
 				f(character);
-			} catch(e:Dynamic)
+			}
+			catch (e:Dynamic)
 				trace(e.toString());
 
 		f(stage);
 		f(hud);
+	}
+
+	/*
+	 * ###################
+	 * ##   SCRIPTING   ##
+	 * ###################
+	 */
+	override function call(f:String, ?args:Array<Dynamic>)
+	{
+		super.call(f, args);
+		stage.call(f, args);
 	}
 }
