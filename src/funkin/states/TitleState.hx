@@ -23,9 +23,8 @@ class TitleState extends MusicBeatState
     override function beatHit(curBeat:Int)
     {
         super.beatHit(curBeat);
-        beats++;
 
-        switch(beats)
+        switch(curBeat)
         {
             case 1:
                 introText.text = "Hai!";
@@ -43,13 +42,16 @@ class TitleState extends MusicBeatState
                 introText.text = "Engine by: \n Ghostglowdev \n T-bar \n SwagaRuney";
             case 8:
                 introText.text = "Engine by: \n Ghostglowdev \n T-bar \n SwagaRuney";
-            case 8:
-                introText.text = "";
             case 9:
-                introText.text = "End this demo pls";
+                introText.text = "";
             case 10:
+                introText.text = "End this demo pls";
+            case 11:
                 FlxG.switchState(new FreeplayState());
         }
+
+        introText.updateHitbox();
+        introText.screenCenter();
 
     }
 }
