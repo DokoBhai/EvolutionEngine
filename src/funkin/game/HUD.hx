@@ -12,6 +12,7 @@ import funkin.game.system.SongData;
 import funkin.substates.LoadingSubstate;
 
 @:access(funkin.game.hud.NoteGroup)
+@:access(funkin.game.PlayState)
 class HUD extends FlxSpriteGroup implements IBeatListener {
 	public var strumlines:Array<Strumline> = [];
 	public var strums:Array<Strum> = [];
@@ -80,18 +81,20 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 	public function updateScoreText() {
 		if (scoreTxt != null) {
 			final rankName = game.getRank();
+			final accuracy = (game.totalPlayed == 0) ? '-' : string(floorDecimal(game.songAccuracy * 100, 2));
 			final placeholders:Array<String> = [ 
 				string(game.songScore), string(game.songMisses), 
-				string(floorDecimal(game.songAccuracy * 100, 2)), rankName 
+				accuracy, rankName 
 			];
 
 			var text:String = scoreFormat;
 			for (i => placeholder in placeholders)
 				text = text.replace('{$i}', placeholder);
 
+			final accColor = (game.totalPlayed != 0) ? 0xFFFFF894 : 0xFF808080;
 			scoreTxt.applyMarkup(text, [
 				new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFFF9494), '<m>'),
-				new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFFFF894), '<a>'),
+				new FlxTextFormatMarkerPair(new FlxTextFormat(accColor), '<a>'),
 				new FlxTextFormatMarkerPair(new FlxTextFormat(PlayState.rankList.get(rankName)[1]), '<r>'),
 			]);
 		}

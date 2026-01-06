@@ -111,15 +111,15 @@ class PlayState extends ScriptableState {
 	}
 	
 	public static var rankList:Map<String, Array<Dynamic>> = [
-		'X'   => [0.99, 0xFF9FECFF],
-		'S+'  => [0.95, 0xFFFFBB00],
-		'S'   => [0.9 , 0xFFFFE600],
-		'A'   => [0.8 , 0xFF56FF56],
-		'B'   => [0.65, 0xFF00FFD5],
-		'C'   => [0.5 , 0xFF00C3FF],
-		'D'   => [0.55, 0xFF3C8AFF],
-		'E'   => [0.4 , 0xFF873DFF],
-		'F'   => [0   , 0xFFFF5151],
+		'X'   => [1, 0xFF9FECFF],
+		'S+'  => [0.99, 0xFFFFBB00],
+		'S'   => [0.95 , 0xFFFFE600],
+		'A'   => [0.9 , 0xFF56FF56],
+		'B'   => [0.8, 0xFF00FFD5],
+		'C'   => [0.65 , 0xFF00C3FF],
+		'D'   => [0.5, 0xFF3C8AFF],
+		'E'   => [0.55 , 0xFF873DFF],
+		'F'   => [0.4 , 0xFFFF5151],
 		'N/A' => [-1  , 0xFF808080]
 	];
 
@@ -858,15 +858,22 @@ class PlayState extends ScriptableState {
 	public function getRank(?accuracy:Float):String {
 		accuracy = FlxMath.bound(accuracy ?? songAccuracy, 0, 1);
 		if (totalPlayed != 0) {
-			for (k => v in rankList) {
-				final minAcc = v[0];
-				final color = v[1];
+			if (accuracy >= 1)
+				return 'X';
 
-				if (accuracy <= minAcc)
-					return k;
+			var bestRank = 'N/A';
+			var bestThreshold:Float = 0;
+			for (rank => data in rankList) {
+				var threshold:Float = data[0];
+
+				if (rank == 'X') continue;
+				if (accuracy >= threshold && threshold >= bestThreshold) {
+					bestThreshold = threshold;
+					bestRank = rank;
+				}
 			}
+			return bestRank;
 		}
-		
 		return 'N/A';
 	}
 
@@ -963,6 +970,9 @@ class PlayState extends ScriptableState {
 		call('destroy'); 
 		for (script in hscripts) script.destroy();
 		hscripts = null;
+
+		for (character in characters) character.destroy();
+		characters = null;
 
 		hud.notes.destroy();
 		hud.unspawnNotes = null;
