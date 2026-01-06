@@ -65,8 +65,6 @@ class FreeplayState extends MusicBeatState {
 		var song = new SongData(songPath, PlayState.getMedianDifficulty(songPath));
         songs.push(song);
 
-		trace('added song: "$songPath"');
-
         return song;
     }
 

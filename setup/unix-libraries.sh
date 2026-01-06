@@ -8,6 +8,7 @@ haxelib install away3d 5.0.9
 haxelib install hxvlc 1.3.0
 haxelib install tjson 1.4.0
 haxelib install flxanimate 3.0.4
+haxelib install moonchart 0.5.0
 haxelib git hscript-improved-dev https://github.com/CodenameCrew/hscript-improved.git codename-dev
 haxelib git hxdiscord_rpc https://github.com/MAJigsaw77/hxdiscord_rpc.git
 haxelib git hxcpp https://github.com/HaxeFoundation/hxcpp.git

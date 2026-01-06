@@ -12,6 +12,7 @@ import funkin.game.system.SongData;
 import funkin.substates.LoadingSubstate;
 
 @:access(funkin.game.hud.NoteGroup)
+@:access(funkin.game.PlayState)
 class HUD extends FlxSpriteGroup implements IBeatListener {
 	public var strumlines:Array<Strumline> = [];
 	public var strums:Array<Strum> = [];
@@ -70,7 +71,7 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 	/* Score Text */
 
 	public var scoreTxt:FlxText;
-	public var scoreFormat:String = 'Score: {0}  •  Misses: {1}  •  Accuracy: {2}%  •  {3}';
+	public var scoreFormat:String = 'Score: {0}  •  <m>Misses: {1}<m>  •  Accuracy: <a>{2}%<a>  •  <r>{3}<r>';
 	public function loadScoreText() {
 		scoreTxt = new FunkinText(0, healthBar.y + 25, FlxG.width, scoreFormat);
 		scoreTxt.setFormat(Paths.font('vcr'), 20, 0xFFFFFFFF, CENTER, OUTLINE, 0xFF000000);
@@ -79,14 +80,23 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 
 	public function updateScoreText() {
 		if (scoreTxt != null) {
+			final rankName = game.getRank();
+			final accuracy = (game.totalPlayed == 0) ? '-' : string(floorDecimal(game.songAccuracy * 100, 2));
 			final placeholders:Array<String> = [ 
 				string(game.songScore), string(game.songMisses), 
-				string(game.songAccuracy), 'N/A' 
+				accuracy, rankName 
 			];
 
-			scoreTxt.text = scoreFormat;
+			var text:String = scoreFormat;
 			for (i => placeholder in placeholders)
-				scoreTxt.text = scoreTxt.text.replace('{$i}', placeholder);
+				text = text.replace('{$i}', placeholder);
+
+			final accColor = (game.totalPlayed != 0) ? 0xFFFFF894 : 0xFF808080;
+			scoreTxt.applyMarkup(text, [
+				new FlxTextFormatMarkerPair(new FlxTextFormat(0xFFFF9494), '<m>'),
+				new FlxTextFormatMarkerPair(new FlxTextFormat(accColor), '<a>'),
+				new FlxTextFormatMarkerPair(new FlxTextFormat(PlayState.rankList.get(rankName)[1]), '<r>'),
+			]);
 		}
 	}
 
@@ -131,7 +141,7 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 				return Math.abs(Conductor.songPosition - leNote.strumTime) <= 188;
 		}
 
-		record('[loadNotes] Iterated through chart\'s notes');
+		//record('[loadNotes] Iterated through chart\'s notes');
 
 		unspawnNotes.sort(sortByTime);
 

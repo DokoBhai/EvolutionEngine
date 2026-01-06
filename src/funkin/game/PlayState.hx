@@ -2,6 +2,8 @@ package funkin.game;
 
 import flixel.FlxObject;
 import flixel.math.FlxPoint;
+import flixel.util.FlxTimer;
+import flixel.util.FlxDestroyUtil;
 import flixel.text.FlxText.FlxTextFormatMarkerPair;
 import funkin.backend.scripting.events.*;
 import funkin.backend.scripting.events.game.*;
@@ -43,6 +45,7 @@ typedef CampaignData = {
 	shits:Int
 }
 
+@:access(funkin.backend.utils.PrecacheUtil)
 class PlayState extends ScriptableState {
     // basic game objects
     public var stage:ScriptableStage;
@@ -94,19 +97,30 @@ class PlayState extends ScriptableState {
 	// scoring-related
 	public var songScore:Int = 0;
 	public var songMisses:Int = 0;
-	public var songAccuracy:Float = 0;
+	public var songAccuracy(get, never):Float;
 	public var ratingName:String = 'N/A';
+
+	var totalNotesHit:Float = 0;
+	var totalPlayed:Float = 0;
+
+	function get_songAccuracy() {
+		if (totalPlayed != 0)
+			return FlxMath.bound(totalNotesHit / totalPlayed);
+
+		return 0;
+	}
 	
-	public static var ratingList:Map<String, Float> = [
-		'X'  => 1,
-		'S+' => 0.99,
-		'S'  => 0.95,
-		'A'  => 0.9,
-		'B'  => 0.8,
-		'C'  => 0.65,
-		'D'  => 0.5,
-		'E'  => 0.55,
-		'F'  => 0.4
+	public static var rankList:Map<String, Array<Dynamic>> = [
+		'X'   => [1, 0xFF9FECFF],
+		'S+'  => [0.99, 0xFFFFBB00],
+		'S'   => [0.95 , 0xFFFFE600],
+		'A'   => [0.9 , 0xFF56FF56],
+		'B'   => [0.8, 0xFF00FFD5],
+		'C'   => [0.65 , 0xFF00C3FF],
+		'D'   => [0.5, 0xFF3C8AFF],
+		'E'   => [0.55 , 0xFF873DFF],
+		'F'   => [0.4 , 0xFFFF5151],
+		'N/A' => [-1  , 0xFF808080]
 	];
 
 	public static var weekPlaylist:Array<String> = [];
@@ -134,6 +148,7 @@ class PlayState extends ScriptableState {
 	function get_songPath() return song?.songPath ?? '';
 
     // misc
+	private var precachedTags:Array<String> = [];
     public var singAnims:Array<String> = [
         'singLEFT', 'singDOWN', 'singUP', 'singRIGHT'
     ];
@@ -161,6 +176,14 @@ class PlayState extends ScriptableState {
 	public var pressLeEnter:FlxText;
     public var pressedEnter:Bool = false;
 
+	// hscript & lua
+	public static var instance:PlayState;
+
+	public function new() {
+		instance = this;
+		super();
+	}
+
     override function create() {
         if (song == null) {
             final songToLoad = 'unknown-suffering';
@@ -177,10 +200,10 @@ class PlayState extends ScriptableState {
             FlxG.sound.music.stop();
 
         // ratings initialization
-		Rating.add('sick', 45, 350);
-		Rating.add('good', 90, 250);
-		Rating.add('bad', 135, 100);
-		Rating.add('shit', 188, 100);
+		Rating.add('sick', 45, 350, 1);
+		Rating.add('good', 90, 250, 0.67);
+		Rating.add('bad', 135, 100, 0.34);
+		Rating.add('shit', 188, 100, 0);
 
         // cameras
 		camGame = new FunkinCamera();
@@ -314,8 +337,8 @@ class PlayState extends ScriptableState {
                             });
                     }
                 }
-				events.push(eventGrp);
             }
+			events.push(eventGrp);
         }
 
         if (hasCharacterChanges) {
@@ -331,32 +354,32 @@ class PlayState extends ScriptableState {
      * @param changes an Array of CharacterChangeData.
      */
     function initCharacterChanges(changes:Array<CharacterChangeData>) {
-		function changesExists(character:Character) {
-			for (change in changes)
+		var changed:Array<Bool> = [ for (_ in 0...changes.length) false ];
+		function hasChanges(character:Character) {
+			for (i => change in changes)
 			{
-				if (change.character == character)
-				{
-					trace('character "${character.name}" has changes, lol!');
+				if (change.character == character && !changed[i])
 					return true;
-				}
 			}
 			return false;
 		}
 
-        for (change in changes) {
+        for (i => change in changes) {
             final character = change.character;
-            character.loadCharacter(change.nextCharacter);
+			final precacheTag = 'character_obj_${change.nextCharacter}';
+			if (!PrecacheUtil.__cache.exists(precacheTag)) {
+            	character.loadCharacter(change.nextCharacter);
 
-            var precachedChar = character.clone();
-			precachedChar.alpha = 0.001;
-			insert(members.indexOf(character), precachedChar);
+            	var precachedChar = character.clone();
+				precachedChar.alpha = 0.001;
+				insert(members.indexOf(character), precachedChar);
 
-            @:privateAccess
-			PrecacheUtil.__cache.set('character_obj_${change.nextCharacter}', [precachedChar]);
-        
-            changes.remove(change);
+				PrecacheUtil.__cache.set(precacheTag, precachedChar);
+				precachedTags.push(precacheTag);
+			}
 
-            if (!changesExists(character)) {
+			changed[i] = true;
+			if (!hasChanges(character)) {
 				character.loadCharacter(change.previousCharacter);
             }
         }
@@ -414,25 +437,65 @@ class PlayState extends ScriptableState {
         }
     }
 
-    /**
-     * Checks if the pause key was pressed, pause the game if so.
-     * Can be cancelled with scripts.
-     */
-    function checkForPause() {
-		if (!pressedEnter && !songEnded && FlxG.keys.justPressed.ENTER) {
-			/*
-			var subState = new MusicBeatSubstate();
-			var event = new GamePauseEvent(Conductor.songPosition, subState);
+	/**
+	 * Checks if the pause key was pressed, pause the game if so.
+	 * Can be cancelled with scripts.
+	 */
+	var isPaused:Bool = false;
+
+	var canPause:Bool = true;
+
+	function checkForPause()
+	{
+		if (FlxG.keys.justPressed.ENTER && canPause && pressedEnter && !songEnded)
+		{
+			var subState = new funkin.game.substates.PauseSubstate(this);
+			var event:GamePauseEvent = new GamePauseEvent(Conductor.songPosition, subState);
+
 			call('onPause', [event]);
-            if (!event.cancelled) {
+			if (!event.cancelled)
+			{
+				persistentDraw = true;
+				persistentUpdate = false;
+				isPaused = true;
+
 				openSubState(subState);
-                // TODO:
-                // make a pause menu
-            } else
+			}
+			else
 				subState.close();
-			*/
-        }
-    }
+		}
+	}
+
+	// Just some managing for substates, so the song pauses when a substate is opened
+	override function openSubState(SubState:FlxSubState)
+	{
+		if (isPaused) {
+			FlxTimer.globalManager.forEach(function(tmr:FlxTimer) if (!tmr.finished) tmr.active = false);
+			FlxTween.globalManager.forEach(function(twn:FlxTween) if (!twn.finished) twn.active = false);
+
+			inst?.pause();
+			voices?.pause();
+		}
+
+		super.openSubState(SubState);
+	}
+
+	override function closeSubState()
+	{
+		super.closeSubState();
+
+		if (isPaused) {
+			sync();
+			FlxTimer.globalManager.forEach(function(tmr:FlxTimer) if (!tmr.finished) tmr.active = true);
+			FlxTween.globalManager.forEach(function(twn:FlxTween) if (!twn.finished) twn.active = true);
+
+			isPaused = false;
+			persistentDraw = true;
+			persistentUpdate = true;
+			inst?.resume();
+			voices?.resume();
+		}
+	}
 
     function keyPressed(key:Int) {
 		call('keyPressed', [key]);
@@ -481,9 +544,10 @@ class PlayState extends ScriptableState {
     function checkForEvent(strumTime:Float) {
 		for (eventGrp in events) {
 			if (strumTime >= eventGrp.strumTime) {
-				for (event in eventGrp.events)
-					triggerEvent(event, eventGrp.strumTime);
 				events.remove(eventGrp);
+				for (event in eventGrp.events) {
+					triggerEvent(event, eventGrp.strumTime);
+				}
 			}
 			else
 				break; // no point in iterating on future events
@@ -501,21 +565,21 @@ class PlayState extends ScriptableState {
 				case 'Move Camera':
 					focusCharacter(int(event.values[0]));
 				case 'Change Character':
-					for (i => char in characters)
+					for (i in 0...characters.length)
 					{
+						var char = characters[i];
+						if (char == null) continue;
 						if (char.characterID == event.values[0])
 						{
-							final __lastChar = char;
-							final __precachedTag = '__character_data_${event.values[1]}';
-							char.kill();
+							var __lastChar:Character = char;
+							final __precachedTag = 'character_obj_${event.values[1]}';
 
-							@:privateAccess {
+							 {
 								characters[i] = PrecacheUtil.__cache.get(__precachedTag);
-								PrecacheUtil.__cache.remove(__precachedTag);
+								//PrecacheUtil.__cache.remove(__precachedTag);
 							}
 
-							char = characters[i];
-							remove(__lastChar);
+							var char = characters[i];
 							char.setPosition(__lastChar.x, __lastChar.y);
 							char.alpha = __lastChar.alpha;
 							char.visible = __lastChar.visible;
@@ -532,6 +596,8 @@ class PlayState extends ScriptableState {
 								if (strumline.character == __lastChar)
 									Reflect.setProperty(strumline, 'character', char);
 							}
+
+							__lastChar.alpha = 0.001;
 
 							break;
 						}
@@ -607,6 +673,9 @@ class PlayState extends ScriptableState {
 								rating.hits++;
 							}
 
+							totalPlayed++;
+							totalNotesHit += rating.factor;
+
 							var ratingPop = Popup.recycle(300, 0, PrecacheUtil.image('gameplay/${ratingName}'));
 							ratingPop.scale.set(0.6, 0.6);
 							ratingPop.updateHitbox();
@@ -653,6 +722,7 @@ class PlayState extends ScriptableState {
 					if (!note.isSustainNote) {
 						songScore -= 10;
 						songMisses++;
+						totalPlayed++;
 					}
 				}
 			}
@@ -750,6 +820,7 @@ class PlayState extends ScriptableState {
 	 */
 	public function characterFromID(id:Int):Null<Character> {
 		for (char in characters) {
+			if (char == null) continue;
 			if (char.characterID == id)
 				return char;
 		}
@@ -763,6 +834,7 @@ class PlayState extends ScriptableState {
 	 */
 	public function characterIDFromName(name:String):Int {
 		for (char in characters) {
+			if (char == null) continue;
 			if (char.name == name)
 				return char.characterID;
 		}
@@ -776,10 +848,33 @@ class PlayState extends ScriptableState {
 	 */
 	public function characterFromName(name:String):Null<Character> {
 		for (char in characters) {
+			if (char == null) continue;
 			if (char.name == name)
 				return char;
 		}
 		return null;
+	}
+
+	public function getRank(?accuracy:Float):String {
+		accuracy = FlxMath.bound(accuracy ?? songAccuracy, 0, 1);
+		if (totalPlayed != 0) {
+			if (accuracy >= 1)
+				return 'X';
+
+			var bestRank = 'N/A';
+			var bestThreshold:Float = 0;
+			for (rank => data in rankList) {
+				var threshold:Float = data[0];
+
+				if (rank == 'X') continue;
+				if (accuracy >= threshold && threshold >= bestThreshold) {
+					bestThreshold = threshold;
+					bestRank = rank;
+				}
+			}
+			return bestRank;
+		}
+		return 'N/A';
 	}
 
 	/*
@@ -830,9 +925,9 @@ class PlayState extends ScriptableState {
      */
     function callBeatListeners(f:Dynamic->Void) {
 		for (character in characters)
-			try
-			{
-				f(character);
+			try {
+				if (character != null)
+					f(character);
 			}
 			catch (e:Dynamic)
 				trace(e.toString());
@@ -850,5 +945,46 @@ class PlayState extends ScriptableState {
     override function call(f:String, ?args:Array<Dynamic>) {
 		super.call(f, args);
 		stage.call(f, args);
+	}
+
+	/*
+	 * #################
+	 * ##   CLEANUP   ##
+	 * #################
+	 */
+
+	override function destroy() {
+		for (m in members) if (m != null) {
+			FlxTween.cancelTweensOf(m);
+			FlxDestroyUtil.destroy(m);
+		}
+
+		FlxG.cameras.reset();
+		FlxG.camera.setFilters([]);
+
+		FlxG.animationTimeScale = 1;
+		
+		inst.stop();
+		voices.stop();
+
+		call('destroy'); 
+		for (script in hscripts) script.destroy();
+		hscripts = null;
+
+		for (character in characters) character.destroy();
+		characters = null;
+
+		hud.notes.destroy();
+		hud.unspawnNotes = null;
+
+		hud.destroy();
+		stage.destroy();
+		
+		Popup.clear();
+		PrecacheUtil.clear();
+
+		instance = null;
+
+		super.destroy();
 	}
 }

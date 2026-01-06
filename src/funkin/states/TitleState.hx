@@ -18,14 +18,11 @@ class TitleState extends MusicBeatState
 		Conductor.bpm = 102;
 	}
 
-    private var beats:Int = 0;
-
     override function beatHit(curBeat:Int)
     {
         super.beatHit(curBeat);
-        beats++;
 
-        switch(beats)
+		switch(curBeat)
         {
             case 1:
                 introText.text = "Hai!";
@@ -36,19 +33,7 @@ class TitleState extends MusicBeatState
             case 4:
                 introText.text = "";
             case 5:
-                introText.text = "We love friday night funkin!";
-            case 6:
-                introText.text = "Engine by: \n Ghostglowdev \n T-bar \n SwagaRuney";
-            case 7:
-                introText.text = "Engine by: \n Ghostglowdev \n T-bar \n SwagaRuney";
-            case 8:
-                introText.text = "Engine by: \n Ghostglowdev \n T-bar \n SwagaRuney";
-            case 8:
-                introText.text = "";
-            case 9:
-                introText.text = "End this demo pls";
-            case 10:
-                FlxG.switchState(new FreeplayState());
+                FlxG.switchState(new funkin.states.FreeplayState());
         }
 
     }

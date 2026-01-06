@@ -94,6 +94,9 @@ class VoicesHandler implements IFlxDestroyable {
 		__playing = true;
 	}
 
+	public function stop()
+		forEach(v -> v.stop());
+
 	public function mute() {
 		forEach(v -> v.volume = 0);
 		muted = true;

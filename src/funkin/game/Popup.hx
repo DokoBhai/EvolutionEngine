@@ -53,4 +53,11 @@ class Popup extends FlxSprite
         }
         return null;
     }
+
+    public static function clear() {
+        for (popup in popups) {
+            popup.destroy();
+            popups.remove(popup);
+        }
+    }
 }
