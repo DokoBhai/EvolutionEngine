@@ -24,19 +24,26 @@ class ScriptableStage extends Stage implements IScriptable
 		#end
 	}
 
-	public function call(func:String, ?args:Array<Dynamic>)
-	{
+	public function call(func:String, ?args:Array<Dynamic>) {
 		#if HSCRIPT_ALLOWED
 		if (hscript != null)
 			hscript.call(func, args ?? []);
 		#end
 	}
 
-	public function set(field:String, value:Dynamic)
-	{
+	public function set(field:String, value:Dynamic) {
 		#if HSCRIPT_ALLOWED
 		if (hscript != null)
 			hscript.set(field, value);
 		#end
+	}
+
+	override function destroy() {
+		#if HSCRIPT_ALLOWED
+		if (hscript != null)
+			hscript.destroy();
+		#end
+
+		super.destroy();
 	}
 }

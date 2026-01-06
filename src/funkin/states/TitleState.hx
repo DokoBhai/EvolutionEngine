@@ -18,8 +18,6 @@ class TitleState extends MusicBeatState
 		Conductor.bpm = 102;
 	}
 
-    private var beats:Int = 0;
-
     override function beatHit(curBeat:Int)
     {
         super.beatHit(curBeat);

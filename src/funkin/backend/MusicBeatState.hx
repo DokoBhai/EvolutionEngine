@@ -77,6 +77,11 @@ class MusicBeatState extends FlxState implements IBeatListener
 		__lastMeasure = Conductor.curMeasure;
 	}
 
+	override function destroy() {
+		instance = null;
+		super.destroy();
+	}
+
 	public function stepHit(curStep:Int) {}
 	public function beatHit(curBeat:Int) {}
 	public function measureHit(curMeasure:Int) {}
