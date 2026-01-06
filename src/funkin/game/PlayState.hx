@@ -56,6 +56,7 @@ class PlayState extends ScriptableState {
 
     public var camGame:FunkinCamera;
     public var camHUD:FunkinCamera;
+	public var camOther:FlxCamera;
     public var camFollow:FlxObject;
     public var hud:HUD;
 
@@ -216,6 +217,10 @@ class PlayState extends ScriptableState {
 		camHUD = new FunkinCamera();
 		camHUD.bgColor.alpha = 0;
 		FlxG.cameras.add(camHUD, false);
+
+		camOther = new FlxCamera();
+		camOther.bgColor = 0x0;
+		FlxG.cameras.add(camOther, false);
 
         // hud elements
 		hud = new HUD(this);

@@ -17,12 +17,24 @@ class MusicBeatSubstate extends FlxSubState implements IBeatListener
 	public var onBeatHit:BeatHitSignal;
 	public var onMeasureHit:BeatHitSignal;
 
+    public var subStateCam:FlxCamera;
+    public static var defaultCam:FlxCamera;
+
 	// for hscript and lua
 	public static var instance:MusicBeatSubstate;
 
 	public function new()
 	{
 		super();
+
+        subStateCam = new FlxCamera();
+        subStateCam.bgColor = 0x0;
+        FlxG.cameras.add(subStateCam, false);
+
+        if (defaultCam == null)
+            defaultCam = subStateCam;
+
+        subStateCam = defaultCam;
 
 		instance = this;
 
@@ -37,6 +49,12 @@ class MusicBeatSubstate extends FlxSubState implements IBeatListener
 		onBeatHit.add(beatHit);
 		onMeasureHit.add(measureHit);
 	}
+
+    override function add(basic:FlxBasic) {
+        super.add(basic);
+        basic.camera = subStateCam;
+        return basic;
+    }
 
 	public function lerp(a:Float, b:Float, ratio:Float, ?fpsSensitive:Bool = false)
 	{
