@@ -2,25 +2,28 @@ package funkin.states;
 
 class TitleState extends MusicBeatState
 {
-	introText:FlxText;
+	var introText:FlxText;
 
 	override function create()
 	{
 		// Main create function
 		super.create();
 
-        introText = new FlxText(0, 0, 128, '');
+        introText = new FlxText(0, 0, 500, '');
         introText.setFormat(Paths.font('funkin'), 32 , 0xFFFFFFFF, FlxTextAlign.CENTER);
-        introText.screenCenter();  
+        introText.screenCenter();
         add(introText);
+		FlxG.sound.playMusic(loadSound(Paths.music('freakyMenu')));
+		Conductor.trackedMusic = FlxG.sound.music;
+		Conductor.bpm = 102;
 	}
 
-    private var beat:Int = 0;
+    private var beats:Int = 0;
 
-    override function onBeatHit(beat:Int)
+    override function beatHit(curBeat:Int)
     {
-        super.onBeatHit(beat);
-        beat++;
+        super.beatHit(curBeat);
+        beats++;
 
         switch(beats)
         {
@@ -31,9 +34,21 @@ class TitleState extends MusicBeatState
             case 3:
                 introText.text = "Uhh...";
             case 4:
-                introText.text = "End this demo pls";
+                introText.text = "";
             case 5:
-                FlxG.switchState(new PlayState());
+                introText.text = "We love friday night funkin!";
+            case 6:
+                introText.text = "Engine by: \n Ghostglowdev \n T-bar \n SwagaRuney";
+            case 7:
+                introText.text = "Engine by: \n Ghostglowdev \n T-bar \n SwagaRuney";
+            case 8:
+                introText.text = "Engine by: \n Ghostglowdev \n T-bar \n SwagaRuney";
+            case 8:
+                introText.text = "";
+            case 9:
+                introText.text = "End this demo pls";
+            case 10:
+                FlxG.switchState(new FreeplayState());
         }
 
     }
