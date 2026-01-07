@@ -55,9 +55,9 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 		add(iconP2);
 	}
 
-	public dynamic function bopIcons(bopAmount:Float = 0.3, duration:Float = 0.5) {
-		iconP1.bop(bopAmount, duration);
-		iconP2.bop(bopAmount, duration);
+	public dynamic function bopIcons(bopAmount:Float = 0.3) {
+		iconP1.bop(bopAmount);
+		iconP2.bop(bopAmount);
 	}
 
 	public dynamic function updateHealthIcons() {
@@ -212,7 +212,7 @@ class HUD extends FlxSpriteGroup implements IBeatListener {
 	}
 
 	public function beatHit(curBeat:Int):Void {
-		bopIcons(0.3, 0.5);
+		bopIcons(0.3);
 	}
 	public function stepHit(curStep:Int):Void {}
 	public function measureHit(curMeasure:Int):Void {}

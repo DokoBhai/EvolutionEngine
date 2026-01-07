@@ -1,7 +1,5 @@
 package funkin.objects;
 
-import flixel.system.FlxAssets.FlxGraphicAsset;
-
 class LogoBumpin extends FunkinSprite
 {
 	public var idleAnimation(default, set):String;
@@ -28,14 +26,13 @@ class LogoBumpin extends FunkinSprite
 
 		onBump = new FlxTypedSignal();
 
-		tryLoadFrames(this, graphic); // from FunkinUtil
+		tryLoadFrames(this, graphic, false); // from FunkinUtil
 		idleAnimation = 'idle';
 	}
 
 	public function bump()
 	{
-		if (shouldBump)
-		{
+		if (shouldBump) {
 			scale.set(bumpFactor, bumpFactor);
 			onBump.dispatch();
 		}
@@ -43,8 +40,7 @@ class LogoBumpin extends FunkinSprite
 
 	override function update(elapsed:Float)
 	{
-		if (shouldBump)
-		{
+		if (shouldBump) {
 			final lerpScale = FlxMath.lerp(scale.x, initialScale, getLerpRatio(lerpFactor));
 			scale.set(lerpScale, lerpScale);
 		}

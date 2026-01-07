@@ -10,9 +10,9 @@ import sys.io.File;
 import openfl.utils.Assets as OpenFLAssets;
 #end
 
-/*
- * Just a filesystem class to manage both sys targets and html targets.
- */
+ /**
+  * a Filesystem class to manage both Sys targets and HTML targets.
+  */
 class FileUtil {
 	public static inline function getContent(filePath:String):String {
 		#if sys
@@ -32,12 +32,15 @@ class FileUtil {
 		} catch(e:Dynamic) trace('error: ${e.toString()}');
 	}
 
-	public static inline function exists(filePath:String):Bool {
-		#if sys
-		return FileSystem.exists(filePath);
-		#else
-		return OpenFLAssets.exists(filePath);
-		#end
+	public static function exists(filePath:String):Bool {
+		if (filePath != null) {
+			#if sys
+			return FileSystem.exists(filePath);
+			#else
+			return OpenFLAssets.exists(filePath);
+			#end
+		}
+		return false;
 	}
 
 	public static inline function getBytes(filePath:String):Bytes {

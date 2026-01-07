@@ -112,15 +112,15 @@ class PlayState extends ScriptableState {
 	}
 	
 	public static var rankList:Map<String, Array<Dynamic>> = [
-		'X'   => [1, 0xFF9FECFF],
-		'S+'  => [0.99, 0xFFFFBB00],
-		'S'   => [0.95 , 0xFFFFE600],
-		'A'   => [0.9 , 0xFF56FF56],
-		'B'   => [0.8, 0xFF00FFD5],
-		'C'   => [0.65 , 0xFF00C3FF],
-		'D'   => [0.5, 0xFF3C8AFF],
-		'E'   => [0.55 , 0xFF873DFF],
-		'F'   => [0.4 , 0xFFFF5151],
+		'X'   => [0.99, 0xFF9FECFF],
+		'S+'  => [0.95, 0xFFFFBB00],
+		'S'   => [0.9 , 0xFFFFE600],
+		'A'   => [0.8 , 0xFF56FF56],
+		'B'   => [0.65, 0xFF00FFD5],
+		'C'   => [0.5 , 0xFF00C3FF],
+		'D'   => [0.55, 0xFF3C8AFF],
+		'E'   => [0.4 , 0xFF873DFF],
+		'F'   => [0   , 0xFFFF5151],
 		'N/A' => [-1  , 0xFF808080]
 	];
 
@@ -248,7 +248,8 @@ class PlayState extends ScriptableState {
         for (j => charInfo in characterInfos) {
             final i = characterInfos.length - 1 - j;
             var character = new Character(stage.characterPositions[i]?.x ?? 0, stage.characterPositions[i]?.y ?? 0, charInfo.name, charInfo.isPlayer);
-            character.hideStrumline = charInfo.hideStrumline ?? false;
+            character.isBopper = charInfo.isBopper ?? false;
+			character.hideStrumline = charInfo.hideStrumline ?? false;
             character.characterID = i;
             add(character);
             characters.push(character);
@@ -256,7 +257,7 @@ class PlayState extends ScriptableState {
 
 		dad = first(characters.filter(c -> return !c.isPlayer && !c.isBopper));
 		bf = first(characters.filter(c -> return c.isPlayer && !c.isBopper));
-		gf = first(characters.filter(c -> return c.isBopper && !c.isPlayer));
+		gf = first(characters.filter(c -> return c.isBopper));
 		focusCharacter();
 
         inst = new FlxSound();
@@ -274,13 +275,12 @@ class PlayState extends ScriptableState {
         hud.loadNotes();
 		initEvents();
 
-		hud.loadHealthBar("bf", "bf");
+		hud.loadHealthBar(bf.icon, dad.icon);
 		health = 1;
 
 		hud.loadScoreText();
 
-		if (GameplayModifiers.opponentMode)
-		{
+		if (GameplayModifiers.opponentMode) {
 			for (strumline in hud.strumlines)
 				strumline.cpu = !strumline.cpu;
 		}
@@ -578,17 +578,17 @@ class PlayState extends ScriptableState {
     }
 
 	/*
-	 * ###############################
-	 * ##	   SUBSTATE RELAED		##
-	 * ###############################
+	 * ################################
+	 * ##	   SUBSTATE RELATED	 	 ##
+	 * ################################
 	 */
 
-	/**
-	 * Checks if the pause key was pressed, pause the game if so.
-	 * Can be cancelled with scripts.
-	 */
 	var isPaused:Bool = false;
 	var canPause:Bool = true;
+	/**
+	 * Checks if the pause key was pressed, pauses the game if so.
+	 * Can be cancelled with scripts.
+	 */
 	function checkForPause() {
 		if (FlxG.keys.justPressed.ENTER && canPause && pressedEnter && !songEnded) {
 			var subState = new funkin.game.substates.PauseSubstate(this);

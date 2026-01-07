@@ -34,6 +34,8 @@
 	<define name="CUSTOM_CLASSES" /> <!-- Allows for custom classes using HScript. Increases loading times-->
 	<define name="VIDEOS_ALLOWED" if="windows || linux || android" unless="32bits"/>
 
+	<!-- <define name="TESTING_MODE" /> -->
+
 	<!-- ____________________________ Window Settings ___________________________ -->
 
 	<!--These window settings apply to all targets-->

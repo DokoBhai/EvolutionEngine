@@ -1,5 +1,6 @@
 package funkin.game.hud;
 
+import funkin.backend.utils.FunkinUtil;
 import flixel.graphics.FlxGraphic;
 import flixel.math.FlxPoint;
 
@@ -17,6 +18,10 @@ class HealthIcon extends FunkinSprite {
 
     public var followObject:Bool = false;
 	public var posTracker:FlxPoint;
+	
+	public var baseScale:FlxPoint = new FlxPoint(1, 1);
+	public var lerpFactor:Float = 0.18;
+	public var shouldLerp:Bool = true;
 
     override public function new(x:Float, y:Float, icon:String, ?isPlayer:Bool = false) {
         super(x, y);
@@ -32,27 +37,28 @@ class HealthIcon extends FunkinSprite {
 		if(followObject && posTracker != null) {
 			setPosition((posTracker.x ?? 0) + trackerOffset.x, (posTracker.y ?? 0) + trackerOffset.y);
         }
+
+		if (shouldLerp) {
+			scale.set(
+				FlxMath.lerp(scale.x, baseScale.x, getLerpRatio(lerpFactor)),
+				FlxMath.lerp(scale.y, baseScale.y, getLerpRatio(lerpFactor))
+			);
+		}
     }
 
-    var bopTween:FlxTween;
-	var baseScale:FlxPoint = new FlxPoint(1, 1);
-    public function bop(bopAmount:Float = 0.3, duration:Float = 0.5) {
-		this.scale.set(baseScale.x + bopAmount, baseScale.y + bopAmount);
-
-		if(bopTween != null) bopTween.cancel();
-		bopTween = FlxTween.tween(this.scale, {x: baseScale.x, y: baseScale.y}, duration, {ease: FlxEase.expoOut});
-    }
+    public function bop(bopAmount:Float = 0.3)
+		scale.set(baseScale.x + bopAmount, baseScale.y + bopAmount);
 
     // Just for backwards compatibility
     public function changeIcon(path:String) {
         image = path;
     }
 
-	public function set_image(val:String):String
-	{
+	public function set_image(val:String):String {
         image = val;
 		var iconGraphic:FlxGraphic = Paths.getImage("icons/icon-" + val);
-		if (iconGraphic == null) iconGraphic = Paths.getImage("icons/" + val);
+		iconGraphic ??= Paths.getImage("icons/" + val);
+		iconGraphic ??= Paths.getImage("icons/icon-face");
 
 		loadGraphic(iconGraphic, true, Math.floor(iconGraphic.width / 2), Math.floor(iconGraphic.height));
 		updateHitbox();
@@ -64,8 +70,7 @@ class HealthIcon extends FunkinSprite {
 		return val;
 	}
 
-    public function set_isPlayer(val:Bool):Bool
-    {
+    public function set_isPlayer(val:Bool):Bool {
 		isPlayer = this.flipX = val;
         return val;
     }

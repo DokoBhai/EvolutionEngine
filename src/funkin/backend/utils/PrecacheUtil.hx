@@ -46,9 +46,7 @@ class PrecacheUtil
 				try {
 					var bmp:BitmapData = BitmapData.fromFile(path);
 					cached = bmp;
-				} catch(e:Dynamic) {
-					cached = null;
-				}
+				} catch(e:Dynamic) cached = null;
 			case SOUND:
 				#if web
 				cached = OpenFLAssets.getSound(path);

@@ -16,10 +16,13 @@ import openfl.display.BitmapData;
 	}
 
 	inline static function bitmapToFlxGraphic(bitmap:BitmapData, path:String) {
-		var newGraphic:FlxGraphic = FlxGraphic.fromBitmapData(bitmap, false, path);
-		newGraphic.persist = true;
-		newGraphic.destroyOnNoUse = false;
-		return newGraphic;
+		if (bitmap != null) {
+			var newGraphic:FlxGraphic = FlxGraphic.fromBitmapData(bitmap, false, path);
+			newGraphic.persist = true;
+			newGraphic.destroyOnNoUse = false;
+			return newGraphic;
+		}
+		return null;
 	}
 
 	inline static function font(key:String, ?showError:Bool):String

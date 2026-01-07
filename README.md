@@ -30,6 +30,7 @@ If there is any problems with the engine, feel free to open up a Git Issue or:
 - **hxvlc**: 1.3.0
 - **hxlua**: N/A *(still deciding whether using hxvm-lua is better)*
 - **hscript**: [git](https://github.com/HaxeFoundation/hscript)
+- **moonchart**: 0.5.0
 - **tjson**: 1.4.0
 - **away3d**: 5.0.9
 - **away3d-samples**: 5.0.3

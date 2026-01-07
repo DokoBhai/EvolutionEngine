@@ -117,8 +117,7 @@ class Note extends FunkinSprite
 		return meta;
 	}
 
-	public function new(noteData:Int, isSustainNote:Bool = false, ?characterID:Int, ?texture:String, ?isPixel:Bool = false)
-	{
+	public function new(noteData:Int, isSustainNote:Bool = false, ?characterID:Int, ?texture:String, ?isPixel:Bool = false) {
 		super();
 
 		this.noteData = noteData;

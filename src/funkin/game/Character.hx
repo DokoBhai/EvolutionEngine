@@ -89,6 +89,7 @@ class Character extends FunkinSprite implements IBeatListener {
 
 	public var data:CharacterData;
 
+	private var __name:String;
 	public var name(default, null):String;
 	public var icon(default, null):String;
 	public var isPlayer(default, set):Bool = false;
@@ -121,6 +122,7 @@ class Character extends FunkinSprite implements IBeatListener {
 	public function new(x:Float = 0, y:Float = 0, name:String, ?isPlayer:Bool = false) {
 		super(x, y);
 
+		__name = name;
 		this.name = name;
 		this.isPlayer = isPlayer;
 
@@ -132,11 +134,10 @@ class Character extends FunkinSprite implements IBeatListener {
 
 	var warn:FlxText;
 	public function performFallback() {
-		final _name = name;
 		loadCharacter(FALLBACK_CHARACTER);
 
 		setColorTransform(0, 0, 0, 0.5, 127, 127, 127, 0);
-		warn = new FlxText(x, y, 0, 'ERROR:\n"$_name" not found!');
+		warn = new FlxText(x, y, 0, 'ERROR:\n"$__name" not found!');
 		warn.offset.set(offset.x, offset.y);
 		warn.setFormat(null, 16, 0xFFFF0000, LEFT);
 		warn.setPosition(x + (frameWidth - warn.width) / 2, y + (frameHeight - warn.height) / 2);
@@ -151,6 +152,7 @@ class Character extends FunkinSprite implements IBeatListener {
 		final charEngine = justifyEngine(sourceData ?? '');
 		if (sourceData != null)
 		{
+			__name = charName;
 			name = charName;
 
 			var data = Parser.character(sourceData, charEngine);
