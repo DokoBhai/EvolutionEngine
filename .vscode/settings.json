@@ -1,13 +1,12 @@
 {
-	"search.exclude": {
-		"export/**/*.hx": true
-	},
-	"[haxe]": {
-		"editor.formatOnSave": false,
-		"editor.formatOnPaste": true,
-		"editor.codeActionsOnSave": {
-			"source.sortImports": "explicit"
-		}
-	},
-	"haxe.enableExtendedIndentation": true
+	"editor.detectIndentation": false,
+	"editor.insertSpaces": false,
+	"files.associations": {
+		"*.hx": "haxe",
+		"*.hscript": "haxe",
+		"*.hsc": "haxe",
+		"*.hxs": "haxe",
+		"*.hxarchive": "haxe",
+		"*.hxbackup": "haxe"
+	}
 }
