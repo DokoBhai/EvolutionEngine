@@ -11,16 +11,30 @@ class PauseSubstate extends MusicBeatSubstate {
 
     // Objects
 	var bg:FlxSprite; // Only making this global so it can be used in scripts
+    var songNameTxt:FunkinText;
+    var deathCounterTxt:FunkinText;
 
-	public var parentInstance:PlayState;
+    var music:FlxSound;
+
+	public var game:PlayState;
     override public function new(parentInstance:PlayState) {
-		this.parentInstance = parentInstance;
+		this.game = parentInstance;
         super();
     }
 
     override public function create() {
 		this.camera = FlxG.cameras.list[FlxG.cameras.list.length - 1];
 		super.create();
+
+        try {
+		    music = new FlxSound();
+			music.loadEmbedded(Paths.music("pause/breakfast" + (FlxG.random.bool(10) ? "-pico" : "")), true, true);
+			music.volume = 0;
+			FlxG.sound.list.add(music);
+			music.fadeIn(7, 0, 0.6); // fadeIn should automatically play the music
+        } catch(e) {
+            trace("No pause music found!");
+        }
 
 		bg = new FlxSprite().makeGraphic(1, 1, FlxColor.BLACK);
 		bg.scale.set(FlxG.width, FlxG.height);
@@ -33,9 +47,21 @@ class PauseSubstate extends MusicBeatSubstate {
 		add(menuOptions);
 
 		regenerateMenuItems();
+
+		songNameTxt = new FunkinText(FlxG.width, 10, 0, '${game.songName}'.toUpperCase(), 33);
+		songNameTxt.setFormat(Paths.font('vcr'), 33, 0xFFFFFFFF, RIGHT, OUTLINE, 0xFF000000);
+		add(songNameTxt);
+
+		deathCounterTxt = new FunkinText(songNameTxt.x, 10, 0, 'BLUE BALLED: 0', 33);
+		deathCounterTxt.setFormat(Paths.font('vcr'), 33, 0xFFFFFFFF, RIGHT, OUTLINE, 0xFF000000);
+		deathCounterTxt.y = songNameTxt.y + deathCounterTxt.height + 3;
+		add(deathCounterTxt);
+
 		changeSelection(0);
 
 		FlxTween.tween(bg, {alpha: 0.6}, 0.5, {ease: FlxEase.sineOut});
+		FlxTween.tween(deathCounterTxt, {x: FlxG.width - deathCounterTxt.width, alpha: 1}, 0.7, {startDelay: 0.6, ease: FlxEase.expoOut});
+		FlxTween.tween(songNameTxt, {x: FlxG.width - songNameTxt.width, alpha: 1}, 0.6, {startDelay: 0.4, ease: FlxEase.expoOut});
 		canSelect = true;
     } 
 
@@ -47,6 +73,18 @@ class PauseSubstate extends MusicBeatSubstate {
             else if (FlxG.keys.justPressed.DOWN) changeSelection(1);
             else if (FlxG.keys.justPressed.ENTER) select(curSelected);
         }
+    }
+
+    override function destroy() {
+		if(music != null) {
+			// Failsafe for if you leave the pause menu while it's still fading in
+			music.fadeTween.cancel();
+            music.fadeTween.destroy();
+
+			music.stop();
+			music.destroy();
+        }
+        super.destroy();
     }
 
     public function changeSelection(delta:Int) {
