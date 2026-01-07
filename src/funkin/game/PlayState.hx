@@ -142,6 +142,8 @@ class PlayState extends ScriptableState {
 	public function set_health(val:Float):Float {
 		health = FlxMath.bound(val, 0, 2);
 		if(hud != null) hud.updateHealthIcons();
+
+		deathCheck(false); // TODO: Add smth to disable this when setting health?
 		return health;
 	}
 
@@ -254,7 +256,7 @@ class PlayState extends ScriptableState {
 
 		dad = first(characters.filter(c -> return !c.isPlayer && !c.isBopper));
 		bf = first(characters.filter(c -> return c.isPlayer && !c.isBopper));
-		gf = first(characters.filter(c -> return c.isBopper));
+		gf = first(characters.filter(c -> return c.isBopper && !c.isPlayer));
 		focusCharacter();
 
         inst = new FlxSound();
@@ -602,6 +604,34 @@ class PlayState extends ScriptableState {
 			}
 			else subState.close();
 		}
+	}
+
+	var hasDied:Bool = false;
+	public static var deathCounter:Int = 0;
+	function deathCheck(forceDeath:Bool = false):Bool {
+		if(forceDeath || (health <= 0)) {
+			var subState = new funkin.game.substates.GameOverSubstate(this);
+			var event:GamePauseEvent = new GamePauseEvent(Conductor.songPosition, subState);
+			call('onGameOver', [event]);
+
+			if(!event.cancelled) {
+				deathCounter++;
+				isPaused = true; // This basically is another pause menu!
+				persistentDraw = persistentUpdate = false;
+
+				inst?.stop();
+				voices?.stop();
+
+				FlxTimer.globalManager.clear();
+				FlxTween.globalManager.clear();
+
+				openSubState(subState);
+
+				return true;
+			}
+			else subState.close();
+		}
+		return false;
 	}
 
 	// Just some managing for substates, so the song pauses when a substate is opened
