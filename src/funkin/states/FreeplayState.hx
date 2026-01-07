@@ -4,6 +4,7 @@ import haxe.CallStack.StackItem;
 import flixel.text.FlxText;
 import funkin.game.system.SongData;
 import funkin.game.PlayState;
+import funkin.backend.input.Controls;
 
 import sys.FileSystem;
 import tjson.TJSON;
@@ -52,6 +53,10 @@ class FreeplayState extends MusicBeatState {
             var selectedSong = songs[curSelected];
             PlayState.loadSong(selectedSong.songPath);
             FlxG.switchState(new PlayState());
+        }
+
+        if (controls.BACK) {
+            FlxG.switchState(new TitleState());
         }
     }
 
